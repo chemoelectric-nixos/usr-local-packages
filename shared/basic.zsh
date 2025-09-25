@@ -3,23 +3,36 @@ if [[ x${name} = x ]]; then
     exit 3
 fi
 
-local abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
-local abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
-local abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
-local targeted_host="${2}"
-local jobs="${JOBS:-24}"
-local silence="${SILENT_RULES:-yes}"
-local check="${3}"
-local tar=tar
-local version="${1}"
-local packname="${name}-${version}"
-local src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
-local bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.xz"
-local abs_srcdir="${abs_srcdirs_dir}/${packname}"
-local abs_builddir="${abs_srcdir}/«build»"
-local abs_destdir="${abs_srcdir}/«dest»"
-local bail_out="exit 1"
+targeted_host="${2}"
+jobs="${jobs:-24}"
+check_jobs="${check_jobs:-"${jobs}"}"
+silent_rules="${silent_rules:-yes}"
+check="${3}"
+tar=tar
+version="${1}"
+packname="${name}-${version}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/«build»"
+abs_destdir="${abs_srcdir}/«dest»"
+bail_out="exit 1"
+
+if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.gz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.bz2" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.bz2"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.zst" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
+else
+    echo "What is the source tarball?"
+    exit 4
+fi
 
 rm -R -f "${packname}" || ${bail_out}
 mkdir -p "${abs_srcdirs_dir}"
@@ -31,11 +44,11 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 	"${(@)environment_variables}" \
 	"${abs_srcdir}"/configure \
 	--prefix=/usr/local \
-	--enable-silent-rules="${silence}" \
+	--enable-silent-rules="${silent_rules}" \
 	"${(@)configure_arguments}" || ${bail_out}
     make -j"${jobs}" || ${bail_out}
     if [[ "${check}" != "no" ]] && [[ "${check}" != "false" ]]; then
-       make -j"${jobs}" check || ${bail_out}
+       make -j"${check_jobs}" check || ${bail_out}
     fi
     make install DESTDIR="${abs_destdir}" || ${bail_out}
 ) || ${bail_out}
