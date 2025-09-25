@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 GMP_VERSION TARGETED_HOST CHECK"
+    echo "Usage: $0 MPFR_VERSION TARGETED_HOST CHECK"
     exit 2
 fi
 
@@ -15,7 +15,7 @@ local silence="${SILENT_RULES:-yes}"
 local check="${3}"
 local tar=tar
 local version="${1}"
-local name=gmp
+local name=mpfr
 local packname="${name}-${version}"
 local src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
 local bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.xz"
@@ -31,10 +31,10 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 (
     cd "${abs_builddir}" || ${bail_out}
     env TARGETED_HOST="${targeted_host}" \
-	CFLAGS="${CFLAGS}${CFLAGS+ }-fomit-frame-pointer" \
-	"${abs_srcdir}"/configure --prefix=/usr/local \
-				 --enable-silent_rules="${silence}" \
-	|| ${bail_out}
+	"${abs_srcdir}"/configure \
+	--prefix=/usr/local \
+	--enable-silent_rules="${silence}" \
+	--with-gmp=/usr/local || ${bail_out}
     make -j"${jobs}" || ${bail_out}
     if [[ "${check}" != "no" ]] && [[ "${check}" != "false" ]]; then
        make -j"${jobs}" check || ${bail_out}
