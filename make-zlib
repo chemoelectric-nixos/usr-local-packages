@@ -1,0 +1,17 @@
+#!/bin/zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+export CC="gcc -march=${4} -mtune=${5}"
+
+ban_prefix=no
+ban_enable_silent_rules=yes
+
+name=zlib
+environment_variables=( )
+configure_arguments=( --64 )
+
+source shared/basic.zsh

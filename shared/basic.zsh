@@ -40,11 +40,23 @@ ${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
 (
     cd "${abs_builddir}" || ${bail_out}
+    local -a default_configure_arguments
+    if [[ "${ban_prefix}" != yes ]]; then
+	default_configure_arguments=(
+	    "${(@)default_configure_arguments}"
+	    --prefix=/usr/local
+	)
+    fi
+    if [[ "${ban_enable_silent_rules}" != yes ]]; then
+	default_configure_arguments=(
+	    "${(@)default_configure_arguments}"
+	    --enable-silent-rules="${silent_rules}"
+	)
+    fi
     env TARGETED_HOST="${targeted_host}" \
 	"${(@)environment_variables}" \
 	"${abs_srcdir}"/configure \
-	--prefix=/usr/local \
-	--enable-silent-rules="${silent_rules}" \
+	"${(@)default_configure_arguments}" \
 	"${(@)configure_arguments}" || ${bail_out}
     make -j"${jobs}" || ${bail_out}
     if [[ "${check}" != "no" ]] && [[ "${check}" != "false" ]]; then
