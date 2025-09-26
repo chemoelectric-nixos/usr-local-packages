@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+if [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH"
+    exit 2
+fi
+
+name=isl
+environment_variables=( )
+configure_arguments=(
+    --with-int=gmp
+    --with-gmp=system
+    --with-clang=no
+    --with-gcc-arch="${4}"
+)
+
+
+source shared/basic.zsh
