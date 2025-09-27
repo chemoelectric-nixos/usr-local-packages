@@ -1,0 +1,44 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST LANGUAGES [FIXED_POINT=no]"
+    exit 2
+fi
+
+if [[ `echo "${1}" | sed 's/\..*//'` -le 11 ]]; then
+    echo "This script is for gcc >= 12"
+    exit 3
+fi
+
+check=no
+
+fixed_point=no
+if [[ $# -eq 4 ]]; then
+    fixed_point="${4}"
+fi
+
+export LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
+
+name=gcc
+environment_variables=( )
+configure_arguments=(
+    --enable-languages="${3}"
+    --disable-canonical-system-headers
+    --disable-multilib
+    --enable-year2038
+    --enable-bootstrap
+    --disable-pgo-build
+    --enable-lto
+    --enable-host-shared
+    --enable-objc-gc
+    --disable-werror
+    --enable-gcov
+    --enable-threads
+    --enable-decimal-float
+    --enable-fixed-point="${fixed_point}"
+    --with-{gmp,mpfr,mpc,isl,zstd}=/usr/local
+    --with-{target-,}system-zlib
+    --with-native-system-header-dir=/usr/local/include
+)
+
+source shared/basic.zsh

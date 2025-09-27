@@ -34,8 +34,8 @@ else
     exit 4
 fi
 
-rm -R -f "${packname}" || ${bail_out}
 mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 ${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
 (
@@ -63,7 +63,8 @@ mkdir -p "${abs_builddir}" || ${bail_out}
        make -j"${check_jobs}" check || ${bail_out}
     fi
     make install DESTDIR="${abs_destdir}" || ${bail_out}
-) || ${bail_out}
+)
+[[ $? -ne 0 ]] && ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} --format=posix -cvaf "${bin_tarball}" -C "${abs_destdir}" usr \
        || ${bail_out}
