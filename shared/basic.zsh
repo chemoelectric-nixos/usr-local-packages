@@ -68,4 +68,4 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} --format=posix -cvaf "${bin_tarball}" -C "${abs_destdir}" usr \
        || ${bail_out}
-exit 0
+

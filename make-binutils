@@ -1,0 +1,41 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=binutils
+environment_variables=( )
+configure_arguments=(
+    --disable-multilib
+    --enable-year2038
+    --enable-lto
+    --enable-host-shared
+    --enable-{gcov,gprof,gprofng}
+    --enable-threads
+    --disable-werror
+    --disable-{rpath,new-dtags}
+    --enable-warn-execstack
+    --enable-warn-rwx-segments
+    --enable-install-libiberty
+    --with-zstd=/usr/local
+    --with-{target-,}system-zlib
+    --with-native-system-header-dir=/usr/local/include
+)
+
+. shared/basic.zsh
+
+#
+# Modify linker scripts. Rid them of library directories outside the
+# /usr/local.
+#
+sed -i -E 's:SEARCH_DIR\("(/usr)?/lib[^[:space:]]*"\);::g' \
+    "${abs_destdir}"/usr/local/*/lib/ldscripts/* || ${bail_out}
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} --format=posix -cvaf "${bin_tarball}" -C "${abs_destdir}" usr \
+       || ${bail_out}
