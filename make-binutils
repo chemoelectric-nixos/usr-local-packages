@@ -24,7 +24,7 @@ configure_arguments=(
     --with-native-system-header-dir=/usr/local/include
 )
 
-. shared/basic.zsh
+source shared/basic.zsh
 
 #
 # Modify linker scripts. Rid them of library directories outside the
@@ -37,5 +37,4 @@ sed -i -E 's:SEARCH_DIR\("(/usr)?/lib[^[:space:]]*"\);::g' \
 # Remake the tarball.
 #
 rm "${bin_tarball}" || ${bail_out}
-${tar} --format=posix -cvaf "${bin_tarball}" -C "${abs_destdir}" usr \
-       || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

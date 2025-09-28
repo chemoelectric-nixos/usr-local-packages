@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST"
+    exit 2
+fi
+
+ban_out_of_source_build=yes
+ban_check=yes
+
+name=indent
+environment_variables=( )
+configure_arguments=(
+    --disable-nls
+    --disable-rpath
+)
+
+source shared/basic.zsh

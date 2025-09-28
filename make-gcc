@@ -10,7 +10,7 @@ if [[ `echo "${1}" | sed 's/\..*//'` -le 11 ]]; then
     exit 3
 fi
 
-check=no
+ban_check=yes
 
 fixed_point=no
 if [[ $# -eq 4 ]]; then

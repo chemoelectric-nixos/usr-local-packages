@@ -6,7 +6,7 @@ if [[ $# -ne 3 ]]; then
 fi
 
 name=gmp
-environment_variables=( CFLAGS="${CFLAGS}${CFLAGS+ }-fomit-frame-pointer" )
+environment_variables=( CFLAGS="${CFLAGS}${CFLAGS+ }-fomit-frame-pointer -std=gnu99" )
 configure_arguments=( )
 
 source shared/basic.zsh

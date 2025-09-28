@@ -11,15 +11,22 @@ targeted_host="${2}"
 jobs="${jobs:-24}"
 check_jobs="${check_jobs:-"${jobs}"}"
 silent_rules="${silent_rules:-yes}"
-check="${3}"
-tar=tar
+if [[ "${ban_check}" = yes ]]; then
+    check=no
+else
+    check="${3}"
+fi
+tar=( tar --format=posix )
 version="${1}"
 packname="${name}-${version}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.xz"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}/«build»"
+if [[ "${ban_out_of_source_build}" = yes ]]; then
+    abs_builddir="${abs_srcdir}"
+fi
 abs_destdir="${abs_srcdir}/«dest»"
-bail_out="exit 1"
+bail_out=( exit 1 )
 
 if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
     src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
@@ -66,6 +73,5 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 )
 [[ $? -ne 0 ]] && ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
-${tar} --format=posix -cvaf "${bin_tarball}" -C "${abs_destdir}" usr \
-       || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
 
