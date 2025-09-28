@@ -8,7 +8,3 @@ two-stage install mechanism.
 
 Tarballs are made from the results and put in the *bin_tarballs*
 directory.
-
-https://github.com/chemoelectric-nixos/usr-local-packages[chemoelectric-nixos/usr-local-packages]
-by https://github.com/chemoelectric[Barry Schwartz] is marked
-https://creativecommons.org/publicdomain/zero/1.0/[CC0 1.0]image:https://mirrors.creativecommons.org/presskit/icons/cc.svg[https://mirrors.creativecommons.org/presskit/icons/cc]image:https://mirrors.creativecommons.org/presskit/icons/zero.svg[https://mirrors.creativecommons.org/presskit/icons/zero]
