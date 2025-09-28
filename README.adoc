@@ -1,0 +1,14 @@
+= Example scripts for _NixOS_ /usr/local packages
+
+Put source tarballs in the *src_tarballs* directory.
+
+Packages are unpacked and built in the *srcdirs* directory, usually by
+out-of-source (‘+VPATH+’) build. They are then ‘installed’ using
+two-stage install mechanism.
+
+Tarballs are made from the results and put in the *bin_tarballs*
+directory.
+
+https://github.com/chemoelectric-nixos/usr-local-packages[chemoelectric-nixos/usr-local-packages]
+by https://github.com/chemoelectric[Barry Schwartz] is marked
+https://creativecommons.org/publicdomain/zero/1.0/[CC0 1.0]image:https://mirrors.creativecommons.org/presskit/icons/cc.svg[https://mirrors.creativecommons.org/presskit/icons/cc]image:https://mirrors.creativecommons.org/presskit/icons/zero.svg[https://mirrors.creativecommons.org/presskit/icons/zero]
