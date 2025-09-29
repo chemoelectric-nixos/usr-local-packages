@@ -17,28 +17,40 @@ if [[ $# -eq 4 ]]; then
     fixed_point="${4}"
 fi
 
-export LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
+export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+
+# Use static libraries as much as possible, because the toolchain gets
+# tricky otherwise. We will build our static libraries with
+# position-independent code.
+static_libraries=`mktemp -d`
+ln -s /usr/local/lib/lib{gmp,mpfr,mpc,isl,zstd,gc}.a ${static_libraries}
 
 name=gcc
 environment_variables=( )
 configure_arguments=(
     --enable-languages="${3}"
+    --enable-default-pie
     --disable-canonical-system-headers
     --disable-multilib
+    --disable-nls
     --enable-year2038
     --enable-bootstrap
     --disable-pgo-build
     --enable-lto
-    --enable-host-shared
+    --disable-host-shared
     --enable-objc-gc
     --disable-werror
     --enable-gcov
     --enable-threads
     --enable-decimal-float
+    --disable-{rpath,new-dtags}
     --enable-fixed-point="${fixed_point}"
-    --with-{gmp,mpfr,mpc,isl,zstd}=/usr/local
-    --with-{target-,}system-zlib
+    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-include=/usr/local
+    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-lib=${static_libraries}
+    --without-{target-,}system-zlib
     --with-native-system-header-dir=/usr/local/include
 )
 
 source shared/basic.zsh
+
+rm -R -f ${static_libraries}

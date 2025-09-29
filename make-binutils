@@ -5,10 +5,19 @@ if [[ $# -ne 3 ]]; then
     exit 2
 fi
 
+# Use static libraries as much as possible, because the toolchain gets
+# tricky otherwise. We will build our static libraries with
+# position-independent code.
+static_libraries=`mktemp -d`
+ln -s /usr/local/lib/libzstd.a ${static_libraries}
+
 name=binutils
 environment_variables=( )
 configure_arguments=(
+    --enable-default-pie
     --disable-multilib
+    --disable-nls
+    --disable-canonical-system-headers
     --enable-year2038
     --enable-lto
     --enable-host-shared
@@ -16,11 +25,10 @@ configure_arguments=(
     --enable-threads
     --disable-werror
     --disable-{rpath,new-dtags}
-    --enable-warn-execstack
-    --enable-warn-rwx-segments
     --enable-install-libiberty
-    --with-zstd=/usr/local
-    --with-{target-,}system-zlib
+    --with-zstd-include=/usr/local
+    --with-zstd-lib=${static_libraries}
+    --without-{target-,}system-zlib
     --with-native-system-header-dir=/usr/local/include
 )
 
@@ -38,3 +46,5 @@ sed -i -E 's:SEARCH_DIR\("(/usr)?/lib[^[:space:]]*"\);::g' \
 #
 rm "${bin_tarball}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+
+rm -R -f ${static_libraries}
