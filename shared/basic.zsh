@@ -24,14 +24,6 @@ check_jobs="${check_jobs:-"${jobs}"}"
 silent_rules="${silent_rules:-yes}"
 
 packname="${name}-${_package_version}"
-bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
-abs_srcdir="${abs_srcdirs_dir}/${packname}"
-abs_builddir="${abs_srcdir}/«build»"
-if [[ "${ban_out_of_source_build}" = yes ]]; then
-    abs_builddir="${abs_srcdir}"
-fi
-abs_destdir="${abs_srcdir}/«dest»"
-
 if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
     src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
 elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.gz" ]]; then
@@ -44,6 +36,13 @@ else
     echo "What is the source tarball?"
     exit 4
 fi
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/«build»"
+if [[ "${ban_out_of_source_build}" = yes ]]; then
+    abs_builddir="${abs_srcdir}"
+fi
+abs_destdir="${abs_srcdir}/«dest»"
 
 mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
