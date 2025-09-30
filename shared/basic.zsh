@@ -3,30 +3,34 @@ if [[ x${name} = x ]]; then
     exit 3
 fi
 
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
 abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
-targeted_host="${2}"
+_package_version="${1}"
+_targeted_host="${2}"
+if [[ "${ban_check}" = yes ]]; then
+    _check=no
+else
+    _check="${3}"
+fi
+
 jobs="${jobs:-24}"
 check_jobs="${check_jobs:-"${jobs}"}"
+
 silent_rules="${silent_rules:-yes}"
-if [[ "${ban_check}" = yes ]]; then
-    check=no
-else
-    check="${3}"
-fi
-tar=( tar --format=posix )
-version="${1}"
-packname="${name}-${version}"
-bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.xz"
+
+packname="${name}-${_package_version}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}/«build»"
 if [[ "${ban_out_of_source_build}" = yes ]]; then
     abs_builddir="${abs_srcdir}"
 fi
 abs_destdir="${abs_srcdir}/«dest»"
-bail_out=( exit 1 )
 
 if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
     src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
@@ -66,13 +70,13 @@ fi
 	    --enable-silent-rules="${silent_rules}"
 	)
     fi
-    env TARGETED_HOST="${targeted_host}" \
+    env TARGETED_HOST="${_targeted_host}" \
 	"${(@)environment_variables}" \
 	"${abs_srcdir}"/configure \
 	"${(@)default_configure_arguments}" \
 	"${(@)configure_arguments}" || ${bail_out}
     make -j"${jobs}" "${(@)make_arguments}" || ${bail_out}
-    if [[ "${check}" != "no" ]] && [[ "${check}" != "false" ]]; then
+    if [[ "${_check}" != "no" ]] && [[ "${_check}" != "false" ]]; then
        make -j"${check_jobs}" check || ${bail_out}
     fi
     make install DESTDIR="${abs_destdir}" || ${bail_out}
