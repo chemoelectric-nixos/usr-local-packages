@@ -1,0 +1,59 @@
+#!/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=gprbuild
+
+_package_version="${1}"
+_targeted_host=x86_64-unknown-linux-gnu
+
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/«dest»"
+
+install -d "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+install -d "${abs_builddir}" || ${bail_out}
+
+(
+
+    cd "${abs_srcdir}" || ${bail_out}
+    cd "${abs_builddir}" || ${bail_out}
+    make all GPRBUILD_OPTIONS='-v' || ${bail_out}
+    make -C doc || ${bail_out}
+    make libgpr.build GPRBUILD_OPTIONS='-v' || ${bail_out}
+
+    make install prefix="${abs_destdir}/usr/local" || ${bail_out}
+    make libgpr.install prefix="${abs_destdir}/usr/local" || ${bail_out}
+
+    rm -f "${abs_destdir}/usr/local/doinstall"
+
+    abs_sharedir="${abs_destdir}/usr/local/share"
+    abs_docdir="${abs_sharedir}/doc/${name}"
+    abs_infodir="${abs_sharedir}/info"
+    install -d "${abs_docdir}" "${abs_infodir}" || ${bail_out}
+    (cd "${abs_docdir}" &&
+         ln -s -r "${abs_sharedir}/examples/gprbuild" examples) \
+	     || ${bail_out}
+    (cd "${abs_infodir}" &&
+	 ln -s -r "${abs_docdir}"/info/*.info "${abs_infodir}") \
+	     || ${bail_out}
+
+) || ${bail_out}
+
+install -d "${abs_bin_tarball_dir}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

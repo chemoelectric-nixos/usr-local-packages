@@ -1,0 +1,39 @@
+#!/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=gprconfig_kb
+
+_package_version="${1}"
+
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-for-any-host.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_destdir="${abs_srcdir}/«dest»"
+
+install -d "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+
+(
+    cd "${abs_srcdir}" || ${bail_out}
+
+    abs_dbdir="${abs_destdir}/usr/local/share/gprconfig"
+    install -d "${abs_dbdir}"
+    install db/*.{xml,ent} "${abs_dbdir}"
+
+) || ${bail_out}
+
+install -d "${abs_bin_tarball_dir}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

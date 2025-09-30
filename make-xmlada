@@ -1,26 +1,19 @@
 #!/bin/zsh
 
-if [[ $# -ne 4 ]]; then
-    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST ARCH TUNE"
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
     exit 2
 fi
+
+name=xmlada
+targeted_host=x86_64-unknown-linux-gnu
 
 ban_out_of_source_build=yes
 ban_check=yes
 ban_enable_silent_rules=yes
 
-name=xmlada
 environment_variables=( )
 configure_arguments=( )
 make_arguments=( all GPRBUILD_OPTIONS='-v' )
-
-_arch="${3}"
-_tune="${4}"
-function patch_function
-{
-    sed -i -E \
-	's:"-O2":"-march='${_arch}'","-mtune='${_tune}'","-O2":' \
-	xmlada_shared.gpr.in || exit 1
-}
 
 source shared/basic.zsh
