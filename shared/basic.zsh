@@ -3,13 +3,6 @@ if [[ x${name} = x ]]; then
     exit 3
 fi
 
-tar=( tar --format=posix )
-bail_out=( exit 1 )
-
-abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
-abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
-abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
-
 _package_version="${1}"
 _targeted_host="${2}"
 if [[ "${ban_check}" = yes ]]; then
@@ -17,6 +10,13 @@ if [[ "${ban_check}" = yes ]]; then
 else
     _check="${3}"
 fi
+
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
 jobs="${jobs:-24}"
 check_jobs="${check_jobs:-"${jobs}"}"
