@@ -45,6 +45,12 @@ mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 ${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
+if [[ `whence -w patch_function` == 'patch_function: function' ]]; then
+    (
+	cd "${abs_srcdir}" || ${bail_out}
+	patch_function || ${bail_out}
+    ) || ${bail_out}
+fi
 (
     cd "${abs_builddir}" || ${bail_out}
     local -a default_configure_arguments
@@ -65,7 +71,7 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 	"${abs_srcdir}"/configure \
 	"${(@)default_configure_arguments}" \
 	"${(@)configure_arguments}" || ${bail_out}
-    make -j"${jobs}" || ${bail_out}
+    make -j"${jobs}" "${(@)make_arguments}" || ${bail_out}
     if [[ "${check}" != "no" ]] && [[ "${check}" != "false" ]]; then
        make -j"${check_jobs}" check || ${bail_out}
     fi
