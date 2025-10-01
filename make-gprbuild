@@ -31,7 +31,6 @@ install -d "${abs_builddir}" || ${bail_out}
 
 (
 
-    cd "${abs_srcdir}" || ${bail_out}
     cd "${abs_builddir}" || ${bail_out}
     make all GPRBUILD_OPTIONS='-v' || ${bail_out}
     make -C doc || ${bail_out}
