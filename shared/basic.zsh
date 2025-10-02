@@ -83,4 +83,3 @@ fi
 [[ $? -ne 0 ]] && ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
-
