@@ -4,7 +4,7 @@ if [[ x${name} = x ]]; then
 fi
 
 _package_version="${1}"
-_targeted_host="${targeted_host:-2}"
+_targeted_host="${targeted_host:-${2}}"
 if [[ "${ban_check}" = yes ]]; then
     _check=no
 else
