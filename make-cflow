@@ -5,7 +5,7 @@ if [[ $# -ne 3 ]]; then
     exit 2
 fi
 
-name=xz
+name=cflow
 
 environment_variables=( )
 configure_arguments=( --disable-nls )
