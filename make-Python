@@ -1,0 +1,43 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=Python
+
+check_arguments=( test )
+check_jobs=1
+ban_out_of_source_build=yes
+
+environment_variables=(
+    EXTRA_USR_LOCAL_CFLAGS='-O3'
+)
+configure_arguments=(
+    #--enable-optimizations
+    #--with-lto=full
+    --with-readline=readline
+
+    # We have trouble with incompatibility between Python and our
+    # version of zstd.
+    py_cv_module__zstd='n/a'
+)
+
+source shared/basic.zsh
+
+#
+# Make a link from python3 to python, etc.
+#
+(cd "${abs_destdir}"/usr/local/bin &&
+     ln -s python3 python &&
+     ln -s pydoc3 pydoc &&
+     ln -s pip3 pip &&
+     ln -s idle3 idle &&
+     ln -s python3-config python-config) || ${bail_out}
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
