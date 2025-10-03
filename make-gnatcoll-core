@@ -14,8 +14,8 @@ jobs="${jobs:-24}"
 
 tar=( tar --format=posix )
 bail_out=( exit 1 )
-gprbuild=( env GPR_PROJECT_PATH=minimal:core gprbuild -v )
-gprinstall=( env GPR_PROJECT_PATH=minimal:core gprinstall -v )
+gprbuild=( gprbuild -v )
+gprinstall=( gprinstall -v )
 
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
 abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
@@ -59,47 +59,31 @@ install -d "${abs_builddir}" || ${bail_out}
 
     _short_version=`echo "${_package_version}" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/'`
 
-    function gprbuild_project
+    function build_and_install_project
     {
         local project="${1}"
         local library_type="${2}"
-        printf "------------------------------------------\n"
-        echo ${gprbuild} -p -m -P"${project}" -j${jobs} \
-             -XGNATCOLL_VERSION="${_short_version}" \
-             -XLIBRARY_TYPE="${library_type}" \
-             -cargs -fno-strict-aliasing
-        printf "------------------------------------------\n"
-        ${gprbuild} -p -m -P"${project}" -j${jobs} \
-                    -XGNATCOLL_VERSION="${_short_version}" \
-                    -XLIBRARY_TYPE="${library_type}" \
-                    -cargs -fno-strict-aliasing || ${bail_out}
+        local here=`realpath ${PWD}`
+        (
+            export GPR_PROJECT_PATH="${here}/minimal:${here}/core"
+            cd "${project}" &&
+                ${gprbuild} -p -m -Pgnatcoll_"${project}" -j"${jobs}" \
+                            -XGNATCOLL_VERSION="${_short_version}" \
+                            -XLIBRARY_TYPE="${library_type}" \
+                            -cargs -fno-strict-aliasing &&
+                ${gprinstall} -p -f -Pgnatcoll_"${project}" \
+                              --prefix="${abs_destdir}/usr/local" \
+                              --sources-subdir=include/gnatcoll_"${project}" \
+                              -XGNATCOLL_VERSION="${_short_version}" \
+                              -XLIBRARY_TYPE="${library_type}" \
+                              --build-name="${library_type}" \
+                              --build-var=LIBRARY_TYPE
+        ) || ${bail_out}
     }
 
-    function gprinstall_project
-    {
-        local project="${1}"
-        local library_type="${2}"
-        local sources_subdir='include/'`basename "${project}" .gpr`
-        printf "--------------------------------------------\n"
-        echo ${gprinstall} -p -f -P"${project}" \
-             --prefix="${abs_destdir}/usr/local" \
-             --sources-subdir="${sources_subdir}" \
-             -XLIBRARY_TYPE="${library_type}" \
-             --build-name="${library_type}" \
-             --build-var=LIBRARY_TYPE
-        printf "--------------------------------------------\n"
-        ${gprinstall} -p -f -P"${project}" \
-                      --prefix="${abs_destdir}/usr/local" \
-                      --sources-subdir="${sources_subdir}" \
-                      -XLIBRARY_TYPE="${library_type}" \
-                      --build-name="${library_type}" \
-                      --build-var=LIBRARY_TYPE
-    }
-
-    for p in minimal core projects; do \
-        for library_type in relocatable static static-pic; do
-            gprbuild_project "${p}/gnatcoll_${p}" "${library_type}"
-            gprinstall_project "${p}/gnatcoll_${p}" "${library_type}"
+    for proj in minimal core projects; do
+        for libtype in relocatable static static-pic; do
+            build_and_install_project "${proj}" "${libtype}"
         done
     done
 
