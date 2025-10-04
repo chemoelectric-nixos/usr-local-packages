@@ -1,0 +1,19 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=pcre2
+
+environment_variables=( )
+configure_arguments=(
+    --enable-jit
+    --enable-pcre2-{8,16,32}
+    --enable-unicode
+    --enable-pcre2grep-{jit,libz,libbz2}
+    --enable-pcre2test-libreadline
+)
+
+source shared/basic.zsh
