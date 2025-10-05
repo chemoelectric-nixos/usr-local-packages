@@ -1,0 +1,27 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=pkgconf
+
+environment_variables=( )
+configure_arguments=( )
+
+source shared/basic.zsh
+
+#
+# Make pkg-config a synonym for pkgconf.
+#
+(cd "${abs_destdir}"/usr/local/bin; \
+ ln -s pkgconf pkg-config) || ${bail_out}
+(cd "${abs_destdir}"/usr/local/share/man/man1; \
+ ln -s pkgconf.1 pkg-config.1) || ${bail_out}
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
