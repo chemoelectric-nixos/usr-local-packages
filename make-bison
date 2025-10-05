@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=bison
+
+environment_variables=(
+    YACC=yacc
+)
+configure_arguments=(
+    --disable-yacc            # Use Berkeley Yacc as the yacc command!
+    --disable-nls
+    --disable-rpath
+    --enable-{largefile,year2038,relocatable}
+)
+
+source shared/basic.zsh
