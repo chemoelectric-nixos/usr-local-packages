@@ -1,0 +1,46 @@
+#!/bin/zsh
+
+if [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST ARCH TUNE"
+    exit 2
+fi
+
+#
+# Sabotage Linux lex.
+#
+# See https://github.com/sabotage-linux/lex
+#
+name=lex
+
+_package_version="${1}"
+_targeted_host="${targeted_host:-${2}}"
+_arch="${3}"
+_tune="${4}"
+
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/«dest»"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+    cd "${abs_builddir}" || ${bail_out}
+    make YACC=yacc CC=gcc \
+         CFLAGS='-fPIC -O2 -march='"${_arch}"' -mtune='"${_tune}" \
+         || ${bail_out}
+    make install PREFIX="${abs_destdir}"/usr/local || ${bail_out}
+) || ${bail_out}
+mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
