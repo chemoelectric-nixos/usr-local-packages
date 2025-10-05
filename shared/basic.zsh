@@ -35,6 +35,8 @@ elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.bz2" ]]; then
     src_tarball="${abs_src_tarball_dir}/${packname}.tar.bz2"
 elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.zst" ]]; then
     src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tgz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tgz"
 else
     echo "What is the source tarball?"
     exit 4

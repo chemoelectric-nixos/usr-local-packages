@@ -1,0 +1,33 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=ats-lang-anairiats
+
+abs_filesdir=`realpath "${PWD}"`/files
+
+function patch_function
+{
+    patch -p1 < "${abs_filesdir}/${name}-0.2.12.patch" || exit 1
+    awk '{print}/^PKG_PROG_PKG_CONFIG/{print "CC=\"${CC} -std=gnu89\""}' \
+        < configure.ac > configure.ac.tmp &&
+        mv configure.ac{.tmp,} || exit 1
+    sed -i 's/gcc/gcc -std=gnu89/' **/Makefile || exit 1
+    awk '{print}/^  \*argv_p = "gcc" ; argv_p \+= 1 ;/ \
+                    {print "  *argv_p = \"-std=gnu89\" ; argv_p += 1 ;"}' \
+        < utils/scripts/atslib.dats > utils/scripts/atslib.dats.tmp &&
+        mv utils/scripts/atslib.dats{.tmp,} || exit 1
+    autoupdate || exit 1
+    autoreconf -fiv || exit 1
+}
+
+ban_out_of_source_build=yes
+
+environment_variables=( )
+configure_arguments=( )
+make_arguments=( GCC='gcc -std=gnu89' )
+
+source shared/basic.zsh
