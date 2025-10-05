@@ -1,0 +1,19 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=flex
+
+environment_variables=(
+    YACC='bison -y'             # The Yacc needs Bison extensions.
+)
+configure_arguments=(
+    --disable-nls
+    --disable-rpath
+    --enable-libfl
+)
+
+source shared/basic.zsh
