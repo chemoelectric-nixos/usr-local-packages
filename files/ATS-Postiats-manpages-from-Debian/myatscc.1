@@ -1,0 +1,69 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH myatscc 1 "July 30, 2018"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+myatscc \- Simple ATS2 compiler frontend
+.SH SYNOPSIS
+.B myatscc
+.RI [ options ] " files" ...
+.SH DESCRIPTION
+.B myatscc
+is a frontend intended to simplify the compilation of ATS source code.
+.B myatscc
+attempts to figure out the necessary flags to compile any .dats file given to it on the command-line. A special comment-based syntax is provided for specifying options to the the
+.B myatscc
+frontend, and these comments are written directly into the source file to be compiled.
+.SH OPTIONS
+.TP
+.B \-\-dry
+See the commands that
+.B myatscc
+would generate without actually running them.
+.TP
+.B \-\-gc
+For use of the Boehm garbage collector for malloc.
+.TP
+.B \-\-help
+Show usage information.
+.SH EXAMPLES
+Whatever needed for compiling foo.dats should be written as some form of comment inside foo.dats. For instance, the following comment is assumed to be the default (if nothing is given explicitly):
+.br
+.sp
+.BI "(*"
+.br
+.BI "##myatsccdef=\\ "
+.br
+.BI "patscc -D_GNU_SOURCE -DATS_MEMALLOC_LIBC -o $fname($1) $1"
+.br
+.BI *)
+.PP
+Then on the command line the file may be compiled with:
+.PP
+.B myatscc foo.dats
+.SH SEE ALSO
+.BR patsopt (1),
+.BR patscc (1)
+.br
+These programs are documented fully by
+.B The ATS2/Postiats user's manual
+available via the web at http://www.ats-lang.org/
+.SH AUTHOR
+.B myatscc
+was written by Hongwei Xi.
+.PP
+This manual page was written by Matthew Danish <mrd@debian.org>,
+for the Debian project (and may be used by others).

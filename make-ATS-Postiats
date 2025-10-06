@@ -18,6 +18,7 @@ bail_out=( exit 1 )
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
 abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+abs_files_dir=`realpath "${PWD}/files"`
 
 abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
 
@@ -52,9 +53,11 @@ install -d "${abs_builddir}" || ${bail_out}
 
     make -f codegen/Makefile_atslib || ${bail_out}
     make -f Makefile_devl all || ${bail_out}
+    (cd contrib/ATS-extsolve-smt2 && make all) || ${bail_out}
 
     ul="${abs_destdir}/usr/local"
     ul_bin="${ul}/bin"
+    ul_man1="${ul}/share/man/man1"
     ul_postiats="${ul}/lib/${name}-${_revision}"
 
     install -d "${ul_bin}" "${ul_postiats}" || ${bail_out}
@@ -66,6 +69,14 @@ install -d "${abs_builddir}" || ${bail_out}
             < "bin/${f}_env.sh.in" > "${ul_bin}/${f}" || ${bail_out}
         chmod a+x "${ul_bin}/${f}" || ${bail_out}
     done
+    install contrib/ATS-extsolve-smt2/bin/* "${ul_bin}" || ${bail_out}
+
+    #
+    # Install manpages taken from Debian’s packaging.
+    #
+    install -d "${ul_man1}" || ${bail_out}
+    install "${abs_files_dir}"/ATS-Postiats-manpages-from-Debian/*.1 \
+            "${ul_man1}" || ${bail_out}
     
 ) || ${bail_out}
 
