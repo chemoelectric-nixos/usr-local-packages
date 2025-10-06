@@ -5,6 +5,10 @@ if [[ $# -ne 3 ]]; then
     exit 2
 fi
 
+#
+# FIXME: Also build atsdoc and atslex.
+#
+
 name=ats-lang-anairiats
 
 abs_filesdir=`realpath "${PWD}"`/files
@@ -31,3 +35,22 @@ configure_arguments=( )
 make_arguments=( GCC='gcc -std=gnu89' )
 
 source shared/basic.zsh
+
+#
+# Some things you need to build Postiats got left out.
+#
+install -d "${abs_destdir}"/usr/local/lib/ats-anairiats-0.2.12 \
+    || ${bail_out}
+for d in libatsdoc utils; do
+    cp -R "${abs_builddir}/${d}" \
+       "${abs_destdir}"/usr/local/lib/ats-anairiats-0.2.12 || ${bail_out}
+done
+
+find "${abs_destdir}" -type d -exec chmod a+rx '{}' ';' || ${bail_out}
+chmod -R a+r "${abs_destdir}" || ${bail_out}
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

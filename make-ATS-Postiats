@@ -1,17 +1,15 @@
 #!/bin/zsh
 
-if [[ $# -ne 4 ]]; then
-    echo "Usage: $0 REVISION TARGETED_HOST ARCH TUNE"
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 REVISION"
     exit 3
 fi
 
-# Make CHICKEN Scheme from the Git sources.
-name=chicken-core
+# Make ATS/Postiats from Git sources.
+name=ATS-Postiats
 
 _revision="${1}"
-_targeted_host="${2}"
-_arch="${3}"
-_tune="${4}"
+_targeted_host=x86_64-unknown-linux-gnu
 
 tar=( tar --posix )
 git=( git )
@@ -42,22 +40,34 @@ abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
 
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 install -d "${abs_builddir}" || ${bail_out}
+
 (
     cd "${abs_builddir}" || ${bail_out}
 
-    # Out-of-source builds are not actually supported yet, as of
-    # 2025-10-04. So copy the sources.
+    # Copy the sources.
     cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
         || ${bail_out}
 
-    env CFLAGS="-O2 -march=""${_arch}"" -mtune=""${_tune}" ./configure \
-        --chicken=/usr/local/libexec/chicken-core/chicken-boot \
-        --prefix=/usr/local \
-        --platform=linux
+    export PATSHOME="$(realpath "${PWD}")"
 
-    make || ${bail_out}
-    make check || ${bail_out}
-    make install DESTDIR="${abs_destdir}" || ${bail_out}
+    make -f codegen/Makefile_atslib || ${bail_out}
+    make -f Makefile_devl all || ${bail_out}
+
+    ul="${abs_destdir}/usr/local"
+    ul_bin="${ul}/bin"
+    ul_postiats="${ul}/lib/${name}-${_revision}"
+
+    install -d "${ul_bin}" "${ul_postiats}" || ${bail_out}
+    cp -R . "${ul_postiats}" || ${bail_out}
+    for f in myatscc patscc patsopt; do
+        sed -e 's|@PACKAGE_VERSION@|'"${_revision}"'|g' \
+            -e 's|@PACKAGE_TARNAME@|'"${name}"'|g' \
+            -e 's|@prefix@|/usr/local|g' \
+            < "bin/${f}_env.sh.in" > "${ul_bin}/${f}" || ${bail_out}
+        chmod a+x "${ul_bin}/${f}" || ${bail_out}
+    done
+    
 ) || ${bail_out}
+
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
