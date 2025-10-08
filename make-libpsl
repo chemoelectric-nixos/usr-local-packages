@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=libpsl
+
+environment_variables=( )
+configure_arguments=(
+
+    --enable-runtime=libidn2
+    --enable-builtin
+
+    --disable-shared
+    --enable-static
+)
+
+source shared/basic.zsh

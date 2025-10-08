@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=ngtcp2
+
+environment_variables=( )
+configure_arguments=(
+    --with-libbrotli{enc,dec}
+    --with-gnutls
+    --with-openssl
+)
+
+function patch_function
+{
+    autoreconf -fiv
+}
+
+source shared/basic.zsh

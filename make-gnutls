@@ -1,0 +1,29 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=gnutls
+
+templib=`mktemp -d || exit 1` || exit 1
+echo 'GROUP ( /usr/local/lib/libunistring.a /usr/local/lib/libtasn1.a -ldl -lhogweed -lnettle /usr/local/lib/libgmp.so )' \
+     > "${templib}/libscript.so"
+
+environment_variables=( )
+configure_arguments=(
+
+    --without-p11-kit
+
+    # Our libtasn1 is statically compiled.
+    --without-included-libtasn1
+
+    # Our libunistring is statically compiled
+    --without-included-unistring
+)
+make_arguments=( LIBS="-L${templib} -lscript" )
+
+source shared/basic.zsh
+
+rm -R -f "${templib}" || exit 1

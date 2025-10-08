@@ -8,7 +8,11 @@ fi
 name=pkgconf
 
 environment_variables=( )
-configure_arguments=( )
+configure_arguments=(
+    --with-pkg-config-dir=/usr/local/lib/pkgconfig
+    --with-system-libdir=/usr/local/lib
+    --with-system-includedir=/usr/local/include
+)
 
 source shared/basic.zsh
 

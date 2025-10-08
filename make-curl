@@ -1,0 +1,61 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=curl
+
+ban_enable_silent_rules=no
+
+static_libraries=`mktemp -d`
+install -d "${static_libraries}"/lib || exit 1
+ln -s /usr/local/lib/libzstd.a "${static_libraries}"/lib/. || exit 1
+ln -s /usr/local/lib/libngtcp2.a "${static_libraries}"/lib/. || exit 1
+ln -s /usr/local/lib/libngtcp2_crypto_gnutls.a "${static_libraries}"/lib/. || exit 1
+ln -s /usr/local/lib/libnghttp3.a "${static_libraries}"/lib/. || exit 1
+ln -s /usr/local/include "${static_libraries}"/. || exit 1
+
+templib=`mktemp -d || exit 1` || exit 1
+echo 'GROUP ( -lgmp -lunistring -lidn2 -lpsl -lzstd -lgnutls -lbrotlidec -lbrotlicommon -lz )' \
+     > "${templib}/libscript.so"
+
+environment_variables=(
+    LDFLAGS="-L${templib}"
+    LIBS="-lscript"
+)
+configure_arguments=(
+
+    --disable-silent-rules
+
+    --enable-symbol-hiding=yes
+    --enable-versioned-symbols=yes
+
+    --with-ca-bundle=/usr/local/etc/ca-bundle.crt
+
+    --with-libssh2  # <-------------- I have libssh2 built statically.
+    --with-zstd="${static_libraries}"
+
+    --with-gnutls
+    --with-nghttp2
+    --with-nghttp3="${static_libraries}"
+    --with-ngtcp2="${static_libraries}"
+
+    --enable-telnet
+    --enable-pop3
+    --enable-imap
+
+    --enable-threaded-resolver
+    --enable-httpsrr
+    --enable-ssls-export
+
+    --with-libpsl=/usr/local
+    --with-libidn2=/usr/local
+
+)
+
+source shared/basic.zsh
+
+rm -R -f "${static_libraries}" || exit 1
+rm -R -f "${templib}" || exit 1
