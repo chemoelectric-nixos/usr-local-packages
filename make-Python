@@ -28,6 +28,7 @@ configure_arguments=(
     --with-lto=full
     --with-readline=readline
     --with-openssl=/usr/local
+    --with-ensurepip=install
 )
 
 source shared/basic.zsh
