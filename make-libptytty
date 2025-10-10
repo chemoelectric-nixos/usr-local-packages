@@ -1,0 +1,42 @@
+#!/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=libptytty
+
+_package_version="${1}"
+_targeted_host=x86_64-unknown-linux-gnu
+
+tar=( tar --format=posix )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/«build»"
+abs_destdir="${abs_srcdir}/«dest»"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+    cd "${abs_builddir}" || ${bail_out}
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DPT_UTMP_FILE:STRING=/run/utmp \
+          -DCMAKE_INSTALL_RPATH="" \
+          -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=False \
+          -DCMAKE_BUILD_TYPE=Release .. || ${bail_out}
+    make || ${bail_out}
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+) || ${bail_out}
+mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
