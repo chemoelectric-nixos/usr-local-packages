@@ -32,7 +32,7 @@ configure_arguments=(
     --enable-symbol-hiding=yes
     --enable-versioned-symbols=yes
 
-    --with-ca-bundle=/usr/local/etc/ca-bundle.crt
+    --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt
 
     --with-libssh2  # <-------------- I have libssh2 built statically.
     --with-zstd="${static_libraries}"

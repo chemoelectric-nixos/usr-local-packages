@@ -1,18 +1,18 @@
 #!/bin/zsh
 
-if [[ $# -ne 4 ]] && [[ $# -ne 5 ]]; then
-    echo "Usage: $0 REVISION TARGETED_HOST ARCH TUNE [USE_CHICKEN_BOOT=no]"
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 REVISION TARGETED_HOST CHECK ARCH TUNE"
     exit 3
 fi
 
-# Make CHICKEN Scheme from the Git sources.
-name=chicken-core
+# Make Gauche Scheme from the Git sources.
+name=Gauche
 
 _revision="${1}"
 _targeted_host="${2}"
-_arch="${3}"
-_tune="${4}"
-_use_chicken_boot="${5:-no}"
+_check="${3}"
+_arch="${4}"
+_tune="${5}"
 
 tar=( tar --posix )
 git=( git )
@@ -44,28 +44,29 @@ abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 install -d "${abs_builddir}" || ${bail_out}
 (
+
     cd "${abs_builddir}" || ${bail_out}
 
-    # Out-of-source builds are not actually supported yet, as of
-    # 2025-10-04. So copy the sources.
+    # Copy the sources.
     cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
         || ${bail_out}
 
-    if [[ "${_use_chicken_boot}" != no ]] &&
-           [[ "${_use_chicken_boot}" != false ]]; then
-        chicken_boot_arguments="--chicken=/usr/local/libexec/chicken-core/chicken-boot"
-    else
-        chicken_boot_arguments=""
+    # Autotoolize.
+    ./DIST gen || ${bail_out}
+
+    env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" \
+        ./configure \
+        --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt \
+        --enable-shared-commands \
+        --enable-heuristic-optimization \
+        --enable-year2038 || ${bail_out}
+
+    make -j"${jobs}" || ${bail_out}
+    if [[ "${_check}" != "no" ]] && [[ "${_check}" != "false" ]]; then
+        make check || ${bail_out}
     fi
-
-    env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" ./configure \
-        --prefix=/usr/local \
-        --platform=linux \
-        ${chicken_boot_arguments}
-
-    make || ${bail_out}
-    make check || ${bail_out}
     make install DESTDIR="${abs_destdir}" || ${bail_out}
+
 ) || ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
