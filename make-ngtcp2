@@ -11,7 +11,6 @@ environment_variables=( )
 configure_arguments=(
     --with-libbrotli{enc,dec}
     --with-gnutls
-    --with-openssl
 )
 
 function patch_function

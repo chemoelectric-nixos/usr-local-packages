@@ -6,6 +6,7 @@ if [[ $# -ne 4 ]]; then
 fi
 
 name=isl
+
 environment_variables=( )
 configure_arguments=(
     --with-int=gmp
@@ -13,6 +14,5 @@ configure_arguments=(
     --with-clang=no
     --with-gcc-arch="${4}"
 )
-
 
 source shared/basic.zsh

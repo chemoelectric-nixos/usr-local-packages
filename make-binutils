@@ -7,13 +7,14 @@ fi
 
 name=binutils
 
-export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
 
 # Use static libraries as much as possible, because the toolchain gets
 # tricky otherwise. We will build our static libraries with
 # position-independent code.
 static_libraries=`mktemp -d`
-ln -s /usr/local/lib/libzstd.a ${static_libraries}
+echo 'GROUP ( /usr/local/lib/libzstd.a )' > ${static_libraries}/libzstd.so || exit 1
+
+export LIBRARY_PATH=${static_libraries}:/usr/local/lib:/usr/local/lib64
 
 environment_variables=( )
 configure_arguments=(
@@ -36,6 +37,13 @@ configure_arguments=(
 )
 
 source shared/basic.zsh
+
+#
+# Remove temporary directories from .la files.
+#
+find "${abs_destdir}" -name '*.la' |
+    xargs sed -i -E "s:-L${static_libraries}::g" \
+        || ${bail_out} 
 
 #
 # Modify linker scripts. Rid them of library directories outside the

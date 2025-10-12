@@ -26,4 +26,17 @@ make_arguments=( LIBS="-L${templib} -lscript" )
 
 source shared/basic.zsh
 
+#
+# Remove libscript.so from .la files.
+#
+find "${abs_destdir}" -name '*.la' |
+    xargs sed -i -E "s:(-L${templib}|-lscript)::g" \
+        || ${bail_out} 
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+
 rm -R -f "${templib}" || exit 1

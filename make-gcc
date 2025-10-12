@@ -23,7 +23,11 @@ fi
 # tricky otherwise. We will build our static libraries with
 # position-independent code.
 static_libraries=`mktemp -d`
-ln -s /usr/local/lib/lib{gmp,mpfr,mpc,isl,zstd,gc}.a ${static_libraries}
+the_libraries=( gmp mpfr mpc isl zstd gc )
+for i in ${the_libraries}; do
+    echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`)" \
+         > ${static_libraries}/lib${i}.so
+done
 
 # Rust, for instance, might expect cc.
 extra_bin=`mktemp -d`
@@ -33,8 +37,14 @@ exec gcc "\${@}"
 EOF
 chmod +x "${extra_bin}"/cc
 
-export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+export LIBRARY_PATH=${static_libraries}:/usr/local/lib:/usr/local/lib64
 export PATH="${extra_bin}:${PATH}"
+
+function patch_function
+{
+    sed -i 's|BUILD_LIBS = \$(BUILD_LIBIBERTY)|BUILD_LIBS = $(BUILD_LIBIBERTY) -liconv|' \
+        gcc/Makefile.in
+}
 
 environment_variables=( )
 configure_arguments=(
@@ -56,13 +66,22 @@ configure_arguments=(
     --enable-decimal-float
     --enable-{rpath,new-dtags}
     --enable-fixed-point="${fixed_point}"
-    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-include=/usr/local
+    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-include=/usr/include
     --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-lib=${static_libraries}
+    --with-libiconv-prefix=/usr/local
+    --with-libiconv-type=shared
     --without-{target-,}system-zlib
     --with-native-system-header-dir=/usr/local/include
 )
 
 source shared/basic.zsh
+
+#
+# Remove temporary directories from .la files.
+#
+find "${abs_destdir}" -name '*.la' |
+    xargs sed -i -E "s:-L${static_libraries}::g" \
+        || ${bail_out} 
 
 #
 # Make cc a synonym for gcc.

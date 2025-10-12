@@ -3,7 +3,7 @@ if [[ x${name} = x ]]; then
     exit 3
 fi
 
-_package_version="${1}"
+_package_version="${package_version:-${1}}"
 _targeted_host="${targeted_host:-${2}}"
 if [[ "${ban_check}" = yes ]]; then
     _check=no

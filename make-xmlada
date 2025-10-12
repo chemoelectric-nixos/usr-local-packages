@@ -6,6 +6,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 name=xmlada
+
 targeted_host=x86_64-unknown-linux-gnu
 
 ban_out_of_source_build=yes
@@ -14,6 +15,9 @@ ban_enable_silent_rules=yes
 
 environment_variables=( )
 configure_arguments=( )
-make_arguments=( all GPRBUILD_OPTIONS='-v' )
+make_arguments=(
+    all
+    GPRBUILD_OPTIONS="-v"
+)
 
 source shared/basic.zsh

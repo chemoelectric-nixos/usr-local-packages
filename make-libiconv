@@ -11,6 +11,9 @@ environment_variables=( )
 configure_arguments=(
     --disable-nls
 
+    --enable-static
+    --enable-shared
+
     --enable-relocatable
     --enable-extra-encodings
     --enable-year2038

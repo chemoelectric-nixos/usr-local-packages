@@ -57,5 +57,18 @@ configure_arguments=(
 
 source shared/basic.zsh
 
+#
+# Remove temporary directories from .la files.
+#
+find "${abs_destdir}" -name '*.la' |
+    xargs sed -i -E "s:-L(${static_libraries}|${templib})::g" \
+        || ${bail_out} 
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+
 rm -R -f "${static_libraries}" || exit 1
 rm -R -f "${templib}" || exit 1
