@@ -5,14 +5,14 @@ if [[ $# -ne 2 ]]; then
     exit 2
 fi
 
+name=indent
+
 ban_out_of_source_build=yes
 ban_check=yes
 
-name=indent
 environment_variables=( )
 configure_arguments=(
     --disable-nls
-    --disable-rpath
 )
 
 source shared/basic.zsh

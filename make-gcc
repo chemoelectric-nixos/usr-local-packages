@@ -5,6 +5,8 @@ if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
     exit 2
 fi
 
+name=gcc
+
 if [[ `echo "${1}" | sed 's/\..*//'` -le 11 ]]; then
     echo "This script is for gcc >= 12"
     exit 3
@@ -17,17 +19,26 @@ if [[ $# -eq 4 ]]; then
     fixed_point="${4}"
 fi
 
-export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
-
 # Use static libraries as much as possible, because the toolchain gets
 # tricky otherwise. We will build our static libraries with
 # position-independent code.
 static_libraries=`mktemp -d`
 ln -s /usr/local/lib/lib{gmp,mpfr,mpc,isl,zstd,gc}.a ${static_libraries}
 
-name=gcc
+# Rust, for instance, might expect cc.
+extra_bin=`mktemp -d`
+cat > "${extra_bin}"/cc <<EOF
+#!/bin/zsh
+exec gcc "\${@}"
+EOF
+chmod +x "${extra_bin}"/cc
+
+export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+export PATH="${extra_bin}:${PATH}"
+
 environment_variables=( )
 configure_arguments=(
+    -C
     --enable-languages="${3}"
     --enable-default-pie
     --disable-canonical-system-headers
@@ -43,7 +54,7 @@ configure_arguments=(
     --enable-gcov
     --enable-threads
     --enable-decimal-float
-    --disable-{rpath,new-dtags}
+    --enable-{rpath,new-dtags}
     --enable-fixed-point="${fixed_point}"
     --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-include=/usr/local
     --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-lib=${static_libraries}
@@ -53,4 +64,16 @@ configure_arguments=(
 
 source shared/basic.zsh
 
-rm -R -f ${static_libraries}
+#
+# Make cc a synonym for gcc.
+#
+(cd "${abs_destdir}"/usr/local/bin && ln -s gcc cc || ${bail_out}) \
+    || ${bail_out}
+
+#
+# Remake the tarball.
+#
+rm "${bin_tarball}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+
+rm -R -f ${static_libraries} ${extra_bin}

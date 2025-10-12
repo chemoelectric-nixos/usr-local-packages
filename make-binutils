@@ -5,13 +5,16 @@ if [[ $# -ne 3 ]]; then
     exit 2
 fi
 
+name=binutils
+
+export LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+
 # Use static libraries as much as possible, because the toolchain gets
 # tricky otherwise. We will build our static libraries with
 # position-independent code.
 static_libraries=`mktemp -d`
 ln -s /usr/local/lib/libzstd.a ${static_libraries}
 
-name=binutils
 environment_variables=( )
 configure_arguments=(
     --enable-default-pie
@@ -24,7 +27,7 @@ configure_arguments=(
     --enable-{gcov,gprof,gprofng}
     --enable-threads
     --disable-werror
-    --disable-{rpath,new-dtags}
+    --enable-{rpath,new-dtags}
     --enable-install-libiberty
     --with-zstd-include=/usr/local
     --with-zstd-lib=${static_libraries}

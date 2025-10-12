@@ -9,7 +9,7 @@ name=libiconv
 
 environment_variables=( )
 configure_arguments=(
-    --disable-{nls,rpath}
+    --disable-nls
 
     --enable-relocatable
     --enable-extra-encodings

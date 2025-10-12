@@ -13,7 +13,6 @@ environment_variables=(
 configure_arguments=(
     --disable-yacc            # Use Berkeley Yacc as the yacc command!
     --disable-nls
-    --disable-rpath
     --enable-{largefile,year2038,relocatable}
 )
 
