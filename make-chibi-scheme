@@ -1,0 +1,28 @@
+#!/bin/zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=chibi-scheme
+
+_arch="${4}"
+_tune="${5}"
+
+ban_out_of_source_build=yes
+
+_cflags='CFLAGS=-pipe -fPIC -march='"${_arch}"' -mtune='"${_tune}"
+
+environment_variables=( )
+configure_arguments=( )
+make_arguments=(
+    PREFIX=/usr/local
+    ${_cflags}
+)
+check_arguments=(
+    test-all
+    ${_cflags}
+)
+
+source shared/basic.zsh

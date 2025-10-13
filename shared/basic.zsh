@@ -79,7 +79,8 @@ fi
     if [[ "${_check}" != "no" ]] && [[ "${_check}" != "false" ]]; then
        make -j"${check_jobs}" "${(@)check_arguments}" || ${bail_out}
     fi
-    make install DESTDIR="${abs_destdir}" || ${bail_out}
+    make install DESTDIR="${abs_destdir}" "${(@)install_arguments}" \
+        || ${bail_out}
 )
 [[ $? -ne 0 ]] && ${bail_out}
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
