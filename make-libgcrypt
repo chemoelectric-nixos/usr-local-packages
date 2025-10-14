@@ -9,8 +9,7 @@ name=libgcrypt
 
 environment_variables=( )
 configure_arguments=(
-    --enable-static
-    --disable-shared
+    --enable-{shared,static}
 )
 
 source shared/basic.zsh

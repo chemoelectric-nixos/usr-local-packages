@@ -8,6 +8,10 @@ fi
 name=libffi
 
 environment_variables=( )
-configure_arguments=( --disable-builddir )
+configure_arguments=(
+    --prefix=/usr/local
+    --libdir=/usr/local/lib
+    --disable-builddir
+)
 
 source shared/basic.zsh

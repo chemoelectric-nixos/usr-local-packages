@@ -31,9 +31,11 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 (
     cd "${abs_builddir}" || ${bail_out}
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_INSTALL_LIBDIR=/usr/local/lib \
+          -DCMAKE_INSTALL_RPATH=/usr/local/lib \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_STATIC_LIBS=ON \
           -DPT_UTMP_FILE:STRING=/run/utmp \
-          -DCMAKE_INSTALL_RPATH="" \
-          -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=False \
           -DCMAKE_BUILD_TYPE=Release .. || ${bail_out}
     make || ${bail_out}
     make install DESTDIR="${abs_destdir}" || ${bail_out}

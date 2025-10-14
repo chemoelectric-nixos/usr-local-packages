@@ -7,62 +7,99 @@ fi
 
 name=curl
 
-ban_enable_silent_rules=no
+#function patch_function
+#{
+#    sed -i -E \
+#        's|if test X"\$OPT_LIBPSL" != Xno; then|LIBS="-lpsl \$LIBS"; if false; then|' \
+#        configure.ac
+#    autoreconf
+#}
 
+#
+# Workaround via static libraries.
+#
 static_libraries=`mktemp -d`
-install -d "${static_libraries}"/lib || exit 1
-ln -s /usr/local/lib/libzstd.a "${static_libraries}"/lib/. || exit 1
-ln -s /usr/local/lib/libngtcp2.a "${static_libraries}"/lib/. || exit 1
-ln -s /usr/local/lib/libngtcp2_crypto_gnutls.a "${static_libraries}"/lib/. || exit 1
-ln -s /usr/local/lib/libnghttp3.a "${static_libraries}"/lib/. || exit 1
-ln -s /usr/local/include "${static_libraries}"/. || exit 1
-
-templib=`mktemp -d || exit 1` || exit 1
-echo 'GROUP ( -lgmp -lunistring -lidn2 -lpsl -lzstd -lgnutls -lbrotlidec -lbrotlicommon -lz )' \
-     > "${templib}/libscript.so"
-
-environment_variables=(
-    LDFLAGS="-L${templib}"
-    LIBS="-lscript"
+ln -s /usr/local/include "${static_libraries}"
+install -d "${static_libraries}"/lib
+the_libraries=(
+    zstd z
+    wolfssl
+    ngtcp2_crypto_wolfssl
+    ng{http{2,3},tcp2}
+    ssh2 gcrypt gpg-error
+    psl idn2
+    unistring iconv
 )
+for i in ${the_libraries}; do
+    echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`-lm )" \
+         > "${static_libraries}"/lib/lib${i}.so
+done
+
+export LIBRARY_PATH="${static_libraries}"/lib:/usr/local/lib
+
+environment_variables=( )
 configure_arguments=(
 
+    -C
     --disable-silent-rules
 
-    --enable-symbol-hiding=yes
-    --enable-versioned-symbols=yes
+    # Build a static library, but no shared library. The shared
+    # library has given us too much trouble.
+    --disable-shared
+    --enable-static
+
+    # The following two mean nothing when you are building a static
+    # library.
+    #
+    #--enable-symbol-hiding=yes
+    #--enable-versioned-symbols=yes
 
     --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt
 
-    --with-libssh2  # <-------------- I have libssh2 built statically.
+    # Experimental HTTPS RR.
+    --enable-threaded-resolver
+    --enable-httpsrr
+
+    # Experimental SSL session export.
+    --enable-ssls-export
+
+    # Prefer libssh2, because libssh is made with cmake and has no
+    # static library.
+    #
+    --with-libssh2="${static_libraries}"
+    #--with-libssh
+
+    # Compression.
+    --with-brotli
+    --with-zlib="${static_libraries}"
     --with-zstd="${static_libraries}"
 
-    --with-gnutls
-    --with-nghttp2
+    # HTTP/2.
+    --with-nghttp2="${static_libraries}"
+
+    # HTTP/3. Also WolfSSL for general encryption.
+    --with-wolfssl="${static_libraries}"
     --with-nghttp3="${static_libraries}"
     --with-ngtcp2="${static_libraries}"
 
-    --enable-telnet
-    --enable-pop3
-    --enable-imap
+    # Internationalized domain names.
+    --with-libpsl="${static_libraries}"
+    --with-libidn2="${static_libraries}"
 
-    --enable-threaded-resolver
-    --enable-httpsrr
-    --enable-ssls-export
-
-    --with-libpsl=/usr/local
-    --with-libidn2=/usr/local
-
+    --without-{gnutls,openssl,mbedtls,rustls}
 )
 
 source shared/basic.zsh
 
 #
-# Remove temporary directories from .la files.
+# Remove temporary directories from .la and .pc files.
 #
 find "${abs_destdir}" -name '*.la' |
-    xargs sed -i -E "s:-L(${static_libraries}|${templib})::g" \
-        || ${bail_out} 
+    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+        || ${bail_out}
+find "${abs_destdir}" -name '*.pc' |
+    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+        || ${bail_out}
 
 #
 # Remake the tarball.
@@ -71,4 +108,3 @@ rm "${bin_tarball}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
 
 rm -R -f "${static_libraries}" || exit 1
-rm -R -f "${templib}" || exit 1

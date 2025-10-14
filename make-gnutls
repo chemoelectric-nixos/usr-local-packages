@@ -21,6 +21,10 @@ configure_arguments=(
 
     # Our libunistring is statically compiled
     --without-included-unistring
+
+    --enable-shared
+    --enable-static
+
 )
 make_arguments=( LIBS="-L${templib} -lscript" )
 

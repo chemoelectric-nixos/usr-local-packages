@@ -12,6 +12,18 @@ if [[ `echo "${1}" | sed 's/\..*//'` -le 11 ]]; then
     exit 3
 fi
 
+_languages="${3}"
+if [[ "${_languages}" = "without-rust" ]]; then
+    case "${1}" in
+        15.* )
+            _languages='c,ada,cobol,c++,d,fortran,go,lto,m2,objc,obj-c++'
+            ;;
+        *)
+            echo "I do not know how to handle ‘without-rust’ for this compiler."
+            ;;
+    esac
+fi
+
 ban_check=yes
 
 fixed_point=no
@@ -23,10 +35,12 @@ fi
 # tricky otherwise. We will build our static libraries with
 # position-independent code.
 static_libraries=`mktemp -d`
-the_libraries=( gmp mpfr mpc isl zstd gc )
+ln -s /usr/local/include ${static_libraries}
+install -d ${static_libraries}/lib
+the_libraries=( gmp mpfr mpc isl zstd z gc )
 for i in ${the_libraries}; do
     echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`)" \
-         > ${static_libraries}/lib${i}.so
+         > ${static_libraries}/lib/lib${i}.so
 done
 
 # Rust, for instance, might expect cc.
@@ -37,19 +51,28 @@ exec gcc "\${@}"
 EOF
 chmod +x "${extra_bin}"/cc
 
-export LIBRARY_PATH=${static_libraries}:/usr/local/lib:/usr/local/lib64
+export LIBRARY_PATH=${static_libraries}/lib:/usr/local/lib
 export PATH="${extra_bin}:${PATH}"
 
 function patch_function
 {
     sed -i 's|BUILD_LIBS = \$(BUILD_LIBIBERTY)|BUILD_LIBS = $(BUILD_LIBIBERTY) -liconv|' \
         gcc/Makefile.in
+    sed -i \
+        -e 's|m64=\.\./lib64\$|m64=$|' \
+        -e 's|m32=\$|m32=../i686-linux-gnu|' \
+        gcc/config/i386/t-linux64
 }
 
 environment_variables=( )
 configure_arguments=(
     -C
-    --enable-languages="${3}"
+
+    --prefix=/usr/local
+    --libdir=/usr/local/lib
+    --with-native-system-header-dir=/usr/local/include
+
+    --enable-languages="${_languages}"
     --enable-default-pie
     --disable-canonical-system-headers
     --disable-multilib
@@ -64,14 +87,12 @@ configure_arguments=(
     --enable-gcov
     --enable-threads
     --enable-decimal-float
-    --enable-{rpath,new-dtags}
+    --enable-new-dtags
     --enable-fixed-point="${fixed_point}"
-    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-include=/usr/include
-    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}-lib=${static_libraries}
+    --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}=${static_libraries}
     --with-libiconv-prefix=/usr/local
-    --with-libiconv-type=shared
+    --with-libiconv-type=static
     --without-{target-,}system-zlib
-    --with-native-system-header-dir=/usr/local/include
 )
 
 source shared/basic.zsh

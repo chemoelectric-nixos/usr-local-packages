@@ -9,12 +9,8 @@ name=libpsl
 
 environment_variables=( )
 configure_arguments=(
-
     --enable-runtime=libidn2
     --enable-builtin
-
-    --disable-shared
-    --enable-static
 )
 
 source shared/basic.zsh

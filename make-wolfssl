@@ -1,0 +1,29 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=wolfssl
+
+function patch_function
+{
+    sh ./autogen.sh
+}
+
+environment_variables=( )
+configure_arguments=(
+    --enable-shared
+    --enable-static
+
+    --enable-ech
+    --enable-dtls
+    --enable-dtls-mtu
+    --enable-quic
+    --enable-libssh2
+    --enable-openssh
+    --enable-openvpn
+)
+
+source shared/basic.zsh

@@ -9,14 +9,6 @@ name=libunistring
 
 environment_variables=( )
 configure_arguments=(
-    #
-    # Static-only libunistring, to simplify mixing it with different
-    # packages.
-    #
-    --enable-static
-    --disable-shared
-
-    --enable-relocatable
     --enable-year2038
 )
 

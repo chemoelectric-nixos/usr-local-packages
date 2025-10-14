@@ -10,8 +10,7 @@ name=libgpg-error
 environment_variables=( )
 configure_arguments=(
     --disable-nls
-    --enable-static
-    --disable-shared
+    --enable-{shared,static}
 )
 
 source shared/basic.zsh

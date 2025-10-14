@@ -14,7 +14,6 @@ configure_arguments=(
     --enable-static
     --enable-shared
 
-    --enable-relocatable
     --enable-extra-encodings
     --enable-year2038
 )

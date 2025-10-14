@@ -9,10 +9,6 @@ name=libssh2
 
 environment_variables=( )
 configure_arguments=(
-
-    --enable-static
-    --disable-shared
-
     --enable-year2038
 
     --disable-docker-tests

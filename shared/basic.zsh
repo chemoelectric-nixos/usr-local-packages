@@ -81,7 +81,22 @@ fi
     fi
     make install DESTDIR="${abs_destdir}" "${(@)install_arguments}" \
         || ${bail_out}
-)
-[[ $? -ne 0 ]] && ${bail_out}
+
+    #
+    # Try to ensure ELF files have /usr/local/lib in the RUNPATH.
+    # Also clean out any /tmp entries.
+    #
+    for f in `find ${abs_destdir}/usr/local -xtype f`; do
+        if [[ -x "${f}" ]]; then
+            patchelf --add-rpath /usr/local/lib "${f}" 2> /dev/null
+            patchelf --shrink-rpath \
+                     --allowed-rpath-prefixes /usr/local:/nix/store \
+                     "${f}" 2> /dev/null
+            true
+        fi
+    done
+
+) || ${bail_out}
+
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
 ${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

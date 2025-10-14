@@ -8,6 +8,8 @@ fi
 name=nghttp3
 
 environment_variables=( )
-configure_arguments=( )
+configure_arguments=(
+    --enable-lib-only
+)
 
 source shared/basic.zsh

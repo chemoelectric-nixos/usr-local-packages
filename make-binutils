@@ -14,10 +14,14 @@ name=binutils
 static_libraries=`mktemp -d`
 echo 'GROUP ( /usr/local/lib/libzstd.a )' > ${static_libraries}/libzstd.so || exit 1
 
-export LIBRARY_PATH=${static_libraries}:/usr/local/lib:/usr/local/lib64
+export LIBRARY_PATH=${static_libraries}:/usr/local/lib
 
 environment_variables=( )
 configure_arguments=(
+    --prefix=/usr/local
+    --libdir=/usr/local/lib
+    --with-native-system-header-dir=/usr/local/include
+
     --enable-default-pie
     --disable-multilib
     --disable-nls
@@ -28,12 +32,11 @@ configure_arguments=(
     --enable-{gcov,gprof,gprofng}
     --enable-threads
     --disable-werror
-    --enable-{rpath,new-dtags}
+    --enable-new-dtags
     --enable-install-libiberty
     --with-zstd-include=/usr/local
     --with-zstd-lib=${static_libraries}
     --without-{target-,}system-zlib
-    --with-native-system-header-dir=/usr/local/include
 )
 
 source shared/basic.zsh
@@ -51,6 +54,12 @@ find "${abs_destdir}" -name '*.la' |
 #
 sed -i -E 's:SEARCH_DIR\("(/usr)?/lib[^[:space:]]*"\);::g' \
     "${abs_destdir}"/usr/local/*/lib/ldscripts/* || ${bail_out}
+
+#
+# Move libiberty.a
+#
+mv "${abs_destdir}"/usr/local/lib{64,}/libiberty.a || ${bail_out}
+rmdir "${abs_destdir}"/usr/local/lib64 || ${bail_out}
 
 #
 # Remake the tarball.

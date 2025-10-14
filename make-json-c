@@ -30,7 +30,13 @@ ${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
 (
     cd "${abs_builddir}" || ${bail_out}
-    ../cmake-configure --prefix=/usr/local || ${bail_out}
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DCMAKE_INSTALL_LIBDIR=/usr/local/lib \
+          -DCMAKE_INSTALL_RPATH=/usr/local/lib \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_STATIC_LIBS=ON \
+          -DDISABLE_WERROR=ON \
+          .. || ${bail_out}
     make || ${bail_out}
     make install DESTDIR="${abs_destdir}" || ${bail_out}
 ) || ${bail_out}

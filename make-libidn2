@@ -9,11 +9,7 @@ name=libidn2
 
 environment_variables=( )
 configure_arguments=(
-
     --disable-nls
-
-    --disable-shared
-    --enable-static
 )
 
 source shared/basic.zsh

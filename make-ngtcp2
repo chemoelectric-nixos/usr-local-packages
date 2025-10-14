@@ -10,7 +10,7 @@ name=ngtcp2
 environment_variables=( )
 configure_arguments=(
     --with-libbrotli{enc,dec}
-    --with-gnutls
+    --with-wolfssl
 )
 
 function patch_function
