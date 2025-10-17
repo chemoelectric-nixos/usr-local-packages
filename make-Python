@@ -17,7 +17,7 @@ echo 'GROUP ( /usr/local/lib/libgdbm.a )' > "${templib}/libgdbm.so"
 echo 'GROUP ( /usr/local/lib/libgdbm.a /usr/local/lib/libgdbm_compat.a )' \
      > "${templib}/libgdbm_compat.so"
 
-export LIBRARY_PATH="${templib}:/usr/local/lib:/usr/local/lib64"
+export LIBRARY_PATH="${templib}:/usr/local/lib"
 
 environment_variables=(
     EXTRA_USR_LOCAL_CFLAGS='-O3'

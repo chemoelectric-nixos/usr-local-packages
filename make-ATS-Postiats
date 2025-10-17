@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+source shared/adjust_runpaths.zsh
+
 if [[ $# -ne 1 ]]; then
     echo "Usage: $0 REVISION"
     exit 3
@@ -34,7 +36,7 @@ function check_out_revision
 check_out_revision "${_revision}"
 
 packname="${name}-${_revision}"
-bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_repo_dir}"
 abs_builddir="${abs_srcdirs_dir}/${packname}/«build»"
 abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
@@ -43,6 +45,7 @@ rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 install -d "${abs_builddir}" || ${bail_out}
 
 (
+
     cd "${abs_builddir}" || ${bail_out}
 
     # Copy the sources.
@@ -78,6 +81,8 @@ install -d "${abs_builddir}" || ${bail_out}
     install "${abs_files_dir}"/ATS-Postiats-manpages-from-Debian/*.1 \
             "${ul_man1}" || ${bail_out}
     
+    adjust_runpaths ${abs_destdir}/usr/local    
+
 ) || ${bail_out}
 
 mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}

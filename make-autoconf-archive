@@ -1,0 +1,67 @@
+#!/bin/zsh
+
+if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
+    echo "Usage: $0 REVISION [GNULIB_REVISION=no-change]"
+    exit 2
+fi
+
+# Get the Autoconf Archive from its GitHub mirror.
+name=autoconf-archive
+
+_revision="${1}"
+_gnulib_revision="${2:-no-change}"
+
+tar=( tar --posix )
+git=( git )
+gnulib_tool=( gnulib-tool )
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+abs_gnulib_repo_dir="${abs_src_tarball_dir}/gnulib.git"
+
+export PATH="${abs_gnulib_repo_dir}:${PATH}"
+
+function check_out
+{
+    local repo="${1}"
+    local revision="${2}"
+    echo "Checking out ${1} revision ${revision}"
+    (cd "${repo}" &&
+         ${git} fetch &&
+         ${git} checkout -q "${revision}") || ${bail_out}
+}
+
+if [[ "${_gnulib_revision}" != "no-change" ]]; then
+    check_out "${abs_gnulib_repo_dir}" "${_gnulib_revision}"
+fi
+
+packname="${name}-${_revision}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
+abs_srcdir="${abs_repo_dir}"
+abs_builddir="${abs_srcdirs_dir}/${packname}/«build»"
+abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+install -d "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    git clone "${abs_repo_dir}" repo_clone || ${bail_out}
+    check_out repo_clone "${_revision}" || ${bail_out}
+
+    cd repo_clone || ${bail_out}
+    ./bootstrap.sh || ${bail_out}
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib || ${bail_out}
+    make maintainer-all || ${bail_out}
+    make || ${bail_out}
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
+
+mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
+${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}

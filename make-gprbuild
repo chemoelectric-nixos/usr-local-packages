@@ -19,7 +19,7 @@ abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
 packname="${name}-${_package_version}"
 src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
-bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}"
 abs_destdir="${abs_srcdir}/«dest»"

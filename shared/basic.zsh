@@ -1,3 +1,5 @@
+source shared/adjust_runpaths.zsh
+
 if [[ x${name} = x ]]; then
     echo "You must define ‘name’"
     exit 3
@@ -41,7 +43,7 @@ else
     echo "What is the source tarball?"
     exit 4
 fi
-bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.xz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}/«build»"
 if [[ "${ban_out_of_source_build}" = yes ]]; then
@@ -82,19 +84,7 @@ fi
     make install DESTDIR="${abs_destdir}" "${(@)install_arguments}" \
         || ${bail_out}
 
-    #
-    # Try to ensure ELF files have /usr/local/lib in the RUNPATH.
-    # Also clean out any /tmp entries.
-    #
-    for f in `find ${abs_destdir}/usr/local -xtype f`; do
-        if [[ -x "${f}" ]]; then
-            patchelf --add-rpath /usr/local/lib "${f}" 2> /dev/null
-            patchelf --shrink-rpath \
-                     --allowed-rpath-prefixes /usr/local:/nix/store \
-                     "${f}" 2> /dev/null
-            true
-        fi
-    done
+    adjust_runpaths ${abs_destdir}/usr/local
 
 ) || ${bail_out}
 
