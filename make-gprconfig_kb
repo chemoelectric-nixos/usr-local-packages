@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+source shared/make_package.zsh
+
 if [[ $# -ne 1 ]]; then
     echo "Usage: $0 PACKAGE_VERSION"
     exit 2
@@ -9,7 +11,6 @@ name=gprconfig_kb
 
 _package_version="${1}"
 
-tar=( tar --format=posix )
 bail_out=( exit 1 )
 
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
@@ -24,7 +25,7 @@ abs_destdir="${abs_srcdir}/«dest»"
 
 install -d "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
-${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 
 (
     cd "${abs_srcdir}" || ${bail_out}
@@ -35,5 +36,4 @@ ${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 
 ) || ${bail_out}
 
-install -d "${abs_bin_tarball_dir}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

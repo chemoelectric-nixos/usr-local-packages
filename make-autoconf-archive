@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+source shared/make_package.zsh
+
 if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
     echo "Usage: $0 REVISION [GNULIB_REVISION=no-change]"
     exit 2
@@ -11,7 +13,6 @@ name=autoconf-archive
 _revision="${1}"
 _gnulib_revision="${2:-no-change}"
 
-tar=( tar --posix )
 git=( git )
 gnulib_tool=( gnulib-tool )
 bail_out=( exit 1 )
@@ -63,5 +64,4 @@ install -d "${abs_builddir}" || ${bail_out}
 
 ) || ${bail_out}
 
-mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

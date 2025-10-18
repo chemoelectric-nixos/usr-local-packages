@@ -49,8 +49,4 @@ done
 find "${abs_destdir}" -type d -exec chmod a+rx '{}' ';' || ${bail_out}
 chmod -R a+r "${abs_destdir}" || ${bail_out}
 
-#
-# Remake the tarball.
-#
-rm "${bin_tarball}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

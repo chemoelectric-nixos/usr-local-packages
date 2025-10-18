@@ -56,15 +56,19 @@ sed -i -E 's:SEARCH_DIR\("(/usr)?/lib[^[:space:]]*"\);::g' \
     "${abs_destdir}"/usr/local/*/lib/ldscripts/* || ${bail_out}
 
 #
-# Move libiberty.a
+# If necessary, move libiberty.a
 #
-mv "${abs_destdir}"/usr/local/lib{64,}/libiberty.a || ${bail_out}
-rmdir "${abs_destdir}"/usr/local/lib64 || ${bail_out}
+# (Apparently, however, setting libdir in config.site works to put
+# libiberty.a in the correct place.)
+#
+if [[ -e "${abs_destdir}"/usr/local/lib64/libiberty.a ]]; then
+    mv "${abs_destdir}"/usr/local/lib{64,}/libiberty.a || ${bail_out}
+    rmdir "${abs_destdir}"/usr/local/lib64 || ${bail_out}
+fi
 
 #
 # Remake the tarball.
 #
-rm "${bin_tarball}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
 
 rm -R -f ${static_libraries}

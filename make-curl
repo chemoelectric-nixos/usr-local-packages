@@ -104,7 +104,6 @@ find "${abs_destdir}" -name '*.pc' |
 #
 # Remake the tarball.
 #
-rm "${bin_tarball}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
 
 rm -R -f "${static_libraries}" || exit 1

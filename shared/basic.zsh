@@ -1,4 +1,5 @@
 source shared/adjust_runpaths.zsh
+source shared/make_package.zsh
 
 if [[ x${name} = x ]]; then
     echo "You must define ‘name’"
@@ -13,7 +14,6 @@ else
     _check="${3}"
 fi
 
-tar=( tar --format=posix )
 bail_out=( exit 1 )
 if [[ x${check_arguments} = x ]]; then
     check_arguments=( check )
@@ -53,7 +53,7 @@ abs_destdir="${abs_srcdir}/«dest»"
 
 mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
-${tar} -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
 if [[ `whence -w patch_function` = 'patch_function: function' ]]; then
     (
@@ -88,5 +88,4 @@ fi
 
 ) || ${bail_out}
 
-mkdir -p "${abs_bin_tarball_dir}" || ${bail_out}
-${tar} -cvaf "${bin_tarball}" -C "${abs_destdir}" usr || ${bail_out}
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
