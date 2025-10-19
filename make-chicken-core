@@ -1,7 +1,7 @@
 #!/bin/zsh
 
-source shared/adjust_runpaths.zsh
 source shared/make_package.zsh
+source shared/git.zsh
 
 if [[ $# -ne 4 ]] && [[ $# -ne 5 ]]; then
     echo "Usage: $0 REVISION TARGETED_HOST ARCH TUNE [USE_CHICKEN_BOOT=no]"
@@ -17,7 +17,6 @@ _arch="${3}"
 _tune="${4}"
 _use_chicken_boot="${5:-no}"
 
-git=( git )
 bail_out=( exit 1 )
 
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
@@ -25,17 +24,7 @@ abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
 abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
-
-function check_out_revision
-{
-    local revision="${1}"
-    echo "Checking out revision ${revision}"
-    (cd "${abs_repo_dir}" &&
-         ${git} fetch &&
-         ${git} checkout -q "${revision}") || ${bail_out}
-}
-
-check_out_revision "${_revision}"
+git_check_out "${abs_repo_dir}" "${_revision}"
 
 packname="${name}-${_revision}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
@@ -69,8 +58,6 @@ install -d "${abs_builddir}" || ${bail_out}
     make check || ${bail_out}
     make install DESTDIR="${abs_destdir}" || ${bail_out}
 
-    adjust_runpaths ${abs_destdir}/usr/local    
-    
 ) || ${bail_out}
 
 make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

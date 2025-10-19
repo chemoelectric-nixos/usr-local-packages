@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 source shared/make_package.zsh
+source shared/git.zsh
 
 if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then
     echo "Usage: $0 REVISION [GNULIB_REVISION=no-change]"
@@ -13,7 +14,6 @@ name=autoconf-archive
 _revision="${1}"
 _gnulib_revision="${2:-no-change}"
 
-git=( git )
 gnulib_tool=( gnulib-tool )
 bail_out=( exit 1 )
 
@@ -26,18 +26,8 @@ abs_gnulib_repo_dir="${abs_src_tarball_dir}/gnulib.git"
 
 export PATH="${abs_gnulib_repo_dir}:${PATH}"
 
-function check_out
-{
-    local repo="${1}"
-    local revision="${2}"
-    echo "Checking out ${1} revision ${revision}"
-    (cd "${repo}" &&
-         ${git} fetch &&
-         ${git} checkout -q "${revision}") || ${bail_out}
-}
-
 if [[ "${_gnulib_revision}" != "no-change" ]]; then
-    check_out "${abs_gnulib_repo_dir}" "${_gnulib_revision}"
+    git_check_out "${abs_gnulib_repo_dir}" "${_gnulib_revision}"
 fi
 
 packname="${name}-${_revision}"
@@ -53,7 +43,7 @@ install -d "${abs_builddir}" || ${bail_out}
     cd "${abs_builddir}" || ${bail_out}
 
     git clone "${abs_repo_dir}" repo_clone || ${bail_out}
-    check_out repo_clone "${_revision}" || ${bail_out}
+    git_check_out repo_clone "${_revision}" || ${bail_out}
 
     cd repo_clone || ${bail_out}
     ./bootstrap.sh || ${bail_out}

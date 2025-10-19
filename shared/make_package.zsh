@@ -1,3 +1,5 @@
+source shared/adjust_runpaths.zsh
+
 function make_blake3_hash
 {
     printf 'blake3-' || exit 1
@@ -14,6 +16,8 @@ function make_package
 {
     local bin_tarball=`realpath "${1}" || exit 1` || exit 1
     local abs_destdir=`realpath "${2}" || exit 1` || exit 1
+
+    adjust_runpaths "${abs_destdir}"/usr/local
 
     mkdir -p `dirname "${bin_tarball}"` || exit 1
     rm -f "${bin_tarball}" || exit 1

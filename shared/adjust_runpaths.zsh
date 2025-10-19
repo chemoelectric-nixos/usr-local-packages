@@ -11,12 +11,11 @@ function adjust_runpaths
     echo "Adding /usr/local/lib to RUNPATHs and then shrinking them."
     for f in `find ${dir} -xtype f`; do
         if [[ -x "${f}" ]]; then
-            patchelf --add-rpath /usr/local/lib "${f}" 2> /dev/null
+            patchelf --add-rpath /usr/local/lib "${f}" 2> /dev/null || true
             patchelf --shrink-rpath \
                      --allowed-rpath-prefixes /usr/local:/nix/store \
-                     "${f}" 2> /dev/null
+                     "${f}" 2> /dev/null || true
         fi
     done
-
-    exit 0
+    true
 }

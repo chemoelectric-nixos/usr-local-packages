@@ -2,6 +2,7 @@
 
 source shared/adjust_runpaths.zsh
 source shared/make_package.zsh
+source shared/git.zsh
 
 if [[ $# -ne 1 ]]; then
     echo "Usage: $0 REVISION"
@@ -14,7 +15,6 @@ name=ATS-Postiats
 _revision="${1}"
 _targeted_host=x86_64-unknown-linux-gnu
 
-git=( git )
 bail_out=( exit 1 )
 
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
@@ -23,17 +23,7 @@ abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 abs_files_dir=`realpath "${PWD}/files"`
 
 abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
-
-function check_out_revision
-{
-    local revision="${1}"
-    echo "Checking out revision ${revision}"
-    (cd "${abs_repo_dir}" &&
-         ${git} fetch &&
-         ${git} checkout -q "${revision}") || ${bail_out}
-}
-
-check_out_revision "${_revision}"
+git_check_out "${abs_repo_dir}" "${_revision}"
 
 packname="${name}-${_revision}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
