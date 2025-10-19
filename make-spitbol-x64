@@ -1,0 +1,70 @@
+#!/bin/zsh
+
+source shared/adjust_runpaths.zsh
+source shared/make_package.zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=spitbol-x64
+
+_package_version="${package_version:-${1}}"
+_targeted_host=x86_64-unknown-linux-gnu
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.gz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.bz2" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.bz2"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.zst" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tgz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tgz"
+else
+    echo "What is the source tarball?"
+    exit 4
+fi
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/«dest»"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+
+mv "${abs_srcdirs_dir}"/{"x64-${_package_version}","${packname}"} || ${bail_out}
+
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    make clean || ${bail_out}
+    make || ${bail_out}
+    ./sanity-check || ${bail_out}
+
+    install -d "${abs_destdir}"/usr/local/{bin,share/spitbol,share/man/man1} || ${bail_out}
+    install -m 755 bin/sbl "${abs_destdir}"/usr/local/bin || ${bail_out}
+    install -m 644 demos/* "${abs_destdir}"/usr/local/share/spitbol || ${bail_out}
+    install -m 644 spitbol.1 "${abs_destdir}"/usr/local/share/man/man1 || ${bail_out}
+    (cd "${abs_destdir}"/usr/local/share/man/man1 &&
+         ln -s spitbol.1 sbl.1 || ${bail_out}) || ${bail_out}
+    (cd "${abs_destdir}"/usr/local/bin &&
+         ln -s sbl spitbol || ${bail_out}) || ${bail_out}
+
+    adjust_runpaths ${abs_destdir}/usr/local
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
