@@ -28,7 +28,7 @@ the_libraries=(
     ng{http{2,3},tcp2}
     ssh2 gcrypt gpg-error
     psl idn2
-    unistring iconv
+    unistring
 )
 for i in ${the_libraries}; do
     echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`-lm )" \
