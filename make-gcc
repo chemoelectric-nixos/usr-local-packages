@@ -39,25 +39,33 @@ ln -s /usr/local/include ${static_libraries}
 install -d ${static_libraries}/lib
 the_libraries=( gmp mpfr mpc isl zstd z gc )
 for i in ${the_libraries}; do
-    echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`)" \
-         > ${static_libraries}/lib/lib${i}.so
+    (
+        echo "GROUP ( "
+        echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'
+        echo ")"
+    ) > ${static_libraries}/lib/lib${i}.so
+    echo \'${static_libraries}/lib/lib${i}.so\' '->' \'`cat ${static_libraries}/lib/lib${i}.so`\'
 done
+ln -sv /usr/local/lib/crt?.o ${static_libraries}/lib
+
+# Put /usr/local/lib64 in the path, in case I am using my older tools
+# to rebuild GCC.
+export LIBRARY_PATH="${static_libraries}/lib:/usr/local/lib:/usr/local/lib64"
+
+extra_bin=`mktemp -d`
 
 # Rust, for instance, might expect cc.
-extra_bin=`mktemp -d`
 cat > "${extra_bin}"/cc <<EOF
 #!/bin/zsh
 exec gcc "\${@}"
 EOF
 chmod +x "${extra_bin}"/cc
 
-export LIBRARY_PATH=${static_libraries}/lib:/usr/local/lib
 export PATH="${extra_bin}:${PATH}"
 
 function patch_function
 {
-    sed -i 's|BUILD_LIBS = \$(BUILD_LIBIBERTY)|BUILD_LIBS = $(BUILD_LIBIBERTY) -liconv|' \
-        gcc/Makefile.in
+    # This is where we teach gcc to put stuff in lib instead of lib64.
     sed -i \
         -e 's|m64=\.\./lib64\$|m64=$|' \
         -e 's|m32=\$|m32=../i686-linux-gnu|' \
@@ -74,6 +82,8 @@ configure_arguments=(
 
     --enable-languages="${_languages}"
     --enable-default-pie
+    --enable-host-pie
+    --disable-fixincludes
     --disable-canonical-system-headers
     --disable-multilib
     --disable-nls
@@ -90,8 +100,6 @@ configure_arguments=(
     --enable-new-dtags
     --enable-fixed-point="${fixed_point}"
     --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}=${static_libraries}
-    --with-libiconv-prefix=/usr/local
-    --with-libiconv-type=static
     --without-{target-,}system-zlib
 )
 
