@@ -7,19 +7,19 @@ fi
 
 name=gcc
 
-if [[ `echo "${1}" | sed 's/\..*//'` -le 11 ]]; then
-    echo "This script is for gcc >= 12"
+if [[ `echo "${1}" | sed 's/\..*//'` -le 10 ]]; then
+    echo "This script is for gcc >= 11"
     exit 3
 fi
 
 _languages="${3}"
-if [[ "${_languages}" = "without-rust" ]]; then
+if [[ "${_languages}" = "without-brig" ]]; then
     case "${1}" in
-        15.* )
-            _languages='c,ada,cobol,c++,d,fortran,go,lto,m2,objc,obj-c++'
+        11.* )
+            _languages='c,ada,c++,d,fortran,go,lto,objc,obj-c++'
             ;;
         *)
-            echo "I do not know how to handle ‘without-rust’ for this compiler."
+            echo "This compiler does not support brig."
             ;;
     esac
 fi
@@ -83,7 +83,7 @@ configure_arguments=(
     --enable-languages="${_languages}"
     --enable-default-pie
     --enable-host-pie
-    --disable-fixincludes
+    # --disable-fixincludes <-- breaks GCC 11.5.0 build.
     --disable-canonical-system-headers
     --disable-multilib
     --disable-nls
@@ -123,4 +123,5 @@ find "${abs_destdir}" -name '*.la' |
 #
 make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
 
-rm -R -f ${static_libraries} ${extra_bin}
+rm -R -f "${static_libraries}"
+rm -R -f "${extra_bin}"
