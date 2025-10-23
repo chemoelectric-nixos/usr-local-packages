@@ -7,14 +7,6 @@ fi
 
 name=curl
 
-#function patch_function
-#{
-#    sed -i -E \
-#        's|if test X"\$OPT_LIBPSL" != Xno; then|LIBS="-lpsl \$LIBS"; if false; then|' \
-#        configure.ac
-#    autoreconf
-#}
-
 #
 # Workaround via static libraries.
 #
@@ -48,13 +40,14 @@ configure_arguments=(
     --disable-shared
     --enable-static
 
-    # The following two mean nothing when you are building a static
-    # library.
-    #
-    #--enable-symbol-hiding=yes
-    #--enable-versioned-symbols=yes
-
-    --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt
+    # This arrangement depends on my rehash-ca-certificates script,
+    # which makes hashed symlinks to certificates. But there also
+    # seems to be a bundle created, at
+    # /usr/local/etc/ssl/certs/ca-certificates.crt.
+    --with-ca-path=/usr/local/etc/ssl/certs
+    --without-ca-bundle
+    --without-ca-embed
+    --without-ca-fallback
 
     # Experimental HTTPS RR.
     --enable-threaded-resolver

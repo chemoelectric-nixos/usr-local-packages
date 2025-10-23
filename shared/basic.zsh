@@ -71,11 +71,13 @@ fi
             --enable-silent-rules="${silent_rules}"
         )
     fi
-    env TARGETED_HOST="${_targeted_host}" \
-        "${(@)environment_variables}" \
-        "${abs_srcdir}"/configure \
-        "${(@)default_configure_arguments}" \
-        "${(@)configure_arguments}" || ${bail_out}
+    if [[ "${ban_configure}" != yes ]]; then
+        env TARGETED_HOST="${_targeted_host}" \
+            "${(@)environment_variables}" \
+            "${abs_srcdir}"/configure \
+            "${(@)default_configure_arguments}" \
+            "${(@)configure_arguments}" || ${bail_out}
+    fi
     make -j"${jobs}" "${(@)make_arguments}" || ${bail_out}
     if [[ "${_check}" != "no" ]] && [[ "${_check}" != "false" ]]; then
        make -j"${check_jobs}" "${(@)check_arguments}" || ${bail_out}

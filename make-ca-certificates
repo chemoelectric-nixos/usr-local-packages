@@ -1,0 +1,94 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=ca-certificates
+
+_package_version="${package_version:-${1}}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.gz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.bz2" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.bz2"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.zst" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
+elif [[ -e "${abs_src_tarball_dir}/${packname}.tgz" ]]; then
+    src_tarball="${abs_src_tarball_dir}/${packname}.tgz"
+else
+    echo "What is the source tarball?"
+    exit 4
+fi
+bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/«dest»"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+
+find "${abs_srcdir}" -type f -print0 |
+    xargs -0 \
+          sed -i -E \
+          -e 's|/usr|/usr/local|g' \
+          -e 's|([[:space:]])usr/|\1usr/local/|g' \
+          -e 's|^usr/|usr/local/|g' \
+          -e 's|/etc|/usr/local/etc|g'
+
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    make || ${bail_out}
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+    make -C sbin install DESTDIR="${abs_destdir}" || ${bail_out}
+
+    cat > reconfigure-ca-certificates <<EOF
+#!/bin/sh
+
+set -e
+
+_source_dir='/usr/local/share/ca-certificates'
+_config_file='/usr/local/etc/ca-certificates.conf'
+
+cd "\${_source_dir}"
+for dir in *; do
+    if [[ -d "\${dir}" ]]; then
+       find "\${dir}" -name '*.crt' -print
+    fi
+done > "\${_config_file}"
+
+echo "Now run /usr/local/sbin/update-ca-certificates"
+echo "and then /usr/local/sbin/rehash-ca-certificates"
+EOF
+    install -m 755 reconfigure-ca-certificates \
+            "${abs_destdir}/usr/local/sbin" || ${bail_out}
+
+    cat > rehash-ca-certificates <<EOF
+#!/bin/sh
+exec openssl rehash /usr/local/etc/ssl/certs
+EOF
+    install -m 755 rehash-ca-certificates \
+            "${abs_destdir}/usr/local/sbin" || ${bail_out}
+
+    abs_docdir="${abs_destdir}/usr/share/doc/${name}"
+    install -d "${abs_docdir}" || ${bail_out}
+    cp -R examples debian "${abs_docdir}" || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

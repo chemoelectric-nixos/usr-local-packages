@@ -10,6 +10,13 @@ name=wolfssl
 function patch_function
 {
     sh ./autogen.sh
+
+    #
+    # Add our certificates directory.
+    #
+    nawk '{print}/static const char\* systemCaDirs\[\] = {/{print "\"/usr/local/etc/ssl/certs,\""}' \
+         < src/ssl_load.c > src/ssl_load.c.tmp &&
+        mv src/ssl_load.c{.tmp,}
 }
 
 environment_variables=( )
