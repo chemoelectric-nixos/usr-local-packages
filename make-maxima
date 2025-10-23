@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=maxima
+
+export LANG=C
+
+# The C locale forces us to change some names.
+build_name="__build__"
+dest_name="__dest__"
+
+environment_variables=( )
+configure_arguments=( --enable-sbcl )
+make_arguments=( all pdf )
+
+source shared/basic.zsh

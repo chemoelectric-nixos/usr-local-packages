@@ -13,6 +13,9 @@ else
     _check="${3}"
 fi
 
+_build_name="${build_name:-«build»}"
+_dest_name="${dest_name:-«dest»}"
+
 bail_out=( exit 1 )
 if [[ x${check_arguments} = x ]]; then
     check_arguments=( check )
@@ -22,8 +25,13 @@ abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
 abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
-jobs="${jobs:-24}"
-check_jobs="${check_jobs:-"${jobs}"}"
+if [[ "${ban_parallel_make}" = "yes" ]]; then
+    jobs=1
+    check_jobs=1
+else
+    jobs="${jobs:-24}"
+    check_jobs="${check_jobs:-"${jobs}"}"
+fi
 
 silent_rules="${silent_rules:-yes}"
 
@@ -44,11 +52,11 @@ else
 fi
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
-abs_builddir="${abs_srcdir}/«build»"
+abs_builddir="${abs_srcdir}/${_build_name}"
 if [[ "${ban_out_of_source_build}" = yes ]]; then
     abs_builddir="${abs_srcdir}"
 fi
-abs_destdir="${abs_srcdir}/«dest»"
+abs_destdir="${abs_srcdir}/${_dest_name}"
 
 mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
