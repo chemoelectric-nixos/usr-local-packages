@@ -1,0 +1,130 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+#############
+# IMPORTANT #
+#############
+#
+# This package overrides some files from make-curl. Thus (in the
+# design of /usr/local as of 2025-10-23) make-libcurl should be
+# installed BEFORE make-curl. This is because we use --skip-old-files
+# when untarring packages.
+#
+name=libcurl
+
+_pkg_version="${1}"
+_srcdirs=`pwd`/srcdirs
+
+rm -R -f "${_srcdirs}/curl-${_pkg_version}"
+
+#
+# Workaround via static libraries.
+#
+static_libraries=`mktemp -d`
+ln -s /usr/local/include "${static_libraries}"
+install -d "${static_libraries}"/lib
+the_libraries=(
+    zstd z
+    wolfssl
+    ngtcp2_crypto_wolfssl
+    ng{http{2,3},tcp2}
+    ssh2 gcrypt gpg-error
+    psl idn2
+    unistring
+)
+for i in ${the_libraries}; do
+    echo "GROUP ( `echo "${the_libraries}" | sed -E 's|([^[:space:]]+)|/usr/local/lib/lib\1.a |g'`-lm )" \
+         > "${static_libraries}"/lib/lib${i}.so
+done
+
+export LIBRARY_PATH="${static_libraries}"/lib:/usr/local/lib
+
+function patch_function
+{
+    (
+        cd ..
+        cp -R --symbolic-link --keep-directory-symlink \
+           "${_srcdirs}/curl-${_pkg_version}"/* \
+           "${_srcdirs}/${name}-${_pkg_version}"
+    )
+}
+ 
+environment_variables=( )
+configure_arguments=(
+
+    -C
+    --disable-silent-rules
+
+    --enable-shared
+    --enable-static
+
+    # This arrangement depends on my rehash-ca-certificates script,
+    # which makes hashed symlinks to certificates. But there also
+    # seems to be a bundle created, at
+    # /usr/local/etc/ssl/certs/ca-certificates.crt.
+    --with-ca-path=/usr/local/etc/ssl/certs
+    --without-ca-bundle
+    --without-ca-embed
+    --without-ca-fallback
+
+    # Experimental HTTPS RR.
+    --enable-threaded-resolver
+    --enable-httpsrr
+
+    # Experimental SSL session export.
+    --enable-ssls-export
+
+    # Prefer libssh2, because libssh is made with cmake and has no
+    # static library.
+    #
+    --with-libssh2="${static_libraries}"
+    #--with-libssh
+
+    # Compression.
+    --with-brotli
+    --with-zlib="${static_libraries}"
+    --with-zstd="${static_libraries}"
+
+    # HTTP/2.
+    --with-nghttp2="${static_libraries}"
+
+    # HTTP/3. Also WolfSSL for general encryption.
+    --with-wolfssl="${static_libraries}"
+    --with-nghttp3="${static_libraries}"
+    --with-ngtcp2="${static_libraries}"
+
+    # Internationalized domain names.
+    --with-libpsl="${static_libraries}"
+    --with-libidn2="${static_libraries}"
+
+    --without-{gnutls,openssl,mbedtls,rustls}
+)
+
+source shared/basic.zsh
+
+#
+# Remove the tools. They are built separately.
+#
+rm -R "${abs_destdir}"/usr/local/bin/{curl,wcurl} || ${bail_out}
+rm -R "${abs_destdir}"/usr/local/share/man/man1/{curl,wcurl}.1 || ${bail_out}
+
+#
+# Remove temporary directories from .la and .pc files.
+#
+find "${abs_destdir}" -name '*.la' |
+    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+        || ${bail_out}
+find "${abs_destdir}" -name '*.pc' |
+    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+        || ${bail_out}
+
+#
+# Remake the tarball.
+#
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
+
+rm -R -f "${static_libraries}" || exit 1

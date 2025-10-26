@@ -1,0 +1,98 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=rustc
+
+_package_version="${package_version:-${1}}"
+_targeted_host="${targeted_host:-${2}}"
+_check="${3}"
+if [[ "${_check}" != no ]] && [[ "${_check}" != false ]]; then
+    echo "CHECK=yes currently is not supported."
+    exit 10
+fi
+_arch="${4}"
+_tune="${5}"
+
+_dest_name="${dest_name:-«dest»}"
+
+bail_out=( exit 1 )
+if [[ x${check_arguments} = x ]]; then
+    check_arguments=( check )
+fi
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+jobs="${jobs:-24}"
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+
+#
+# Disable NixOS patching.
+#
+sed -i \
+    -e 's/self\._should_fix_bins_and_dylibs = None/self\._should_fix_bins_and_dylibs = False/' \
+    "${abs_srcdir}/src/bootstrap/bootstrap.py" || ${bail_out}
+sed -i \
+    -e 's/let val = \*SHOULD_FIX_BINS_AND_DYLIBS.get_or_init/let mut val = *SHOULD_FIX_BINS_AND_DYLIBS.get_or_init/' \
+    -e 's/eprintln!("INFO: You seem to be using Nix\.")/val = false/' \
+    "${abs_srcdir}/src/bootstrap/src/core/download.rs" || ${bail_out}
+
+mkdir -p "${abs_builddir}" || ${bail_out}
+
+if false; then
+    sed -e 's|@CARGO@|"'"$(which cargo)"'"|g' \
+        -e 's|@RUSTC@|"'"$(which rustc)"'"|g' \
+        -e 's|@RUSTFMT@|"'"$(which rustfmt)"'"|g' \
+        -e 's|@CARGO-CLIPPY@|"'"$(which cargo-clippy)"'"|g' \
+        -e 's|@ARCH@|'${_arch}'|g' \
+        -e 's|@TUNE@|'${_tune}'|g' \
+        -e 's|@JOBS@|'${jobs}'|g' \
+        files/rustc/bootstrap.toml.in \
+        > "${abs_builddir}/bootstrap.toml" || ${bail_out}
+else
+    sed -e '/@CARGO@/d' \
+        -e '/@RUSTC@/d' \
+        -e '/@RUSTFMT@/d' \
+        -e '/@CARGO-CLIPPY/d' \
+        -e 's|@ARCH@|'${_arch}'|g' \
+        -e 's|@TUNE@|'${_tune}'|g' \
+        -e 's|@JOBS@|'${jobs}'|g' \
+        files/rustc/bootstrap.toml.in \
+        > "${abs_builddir}/bootstrap.toml" || ${bail_out}
+fi
+
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    _python=/usr/local/bin/python
+    _x_py=( ${_python} `realpath x.py` )
+    _bootstrap_toml=`realpath bootstrap.toml`
+
+    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig
+    export LIBRARY_PATH=/usr/local/lib
+
+    export ZLIB_INCLUDE_DIR=/usr/local/include
+
+    env DESTDIR="${abs_destdir}" \
+        ${_x_py} install || ${bail_out}
+    
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

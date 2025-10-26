@@ -1,0 +1,53 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+source shared/git.zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+name=roswell
+
+_revision="${1}"
+_targeted_host=x86_64-unknown-linux-gnu
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+git_check_out "${abs_repo_dir}" "${_revision}"
+
+packname="${name}-${_revision}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_repo_dir}"
+abs_builddir="${abs_srcdirs_dir}/${packname}/«build»"
+abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+install -d "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    # Copy the sources.
+    cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
+        || ${bail_out}
+
+    sh bootstrap || ${bail_out}
+    env CFLAGS=-std=gnu99 ./configure \
+        --prefix=/usr/local \
+        --libdir=/usr/local/lib \
+        --enable-manual-generation \
+        --enable-manual-install \
+        --enable-html-generation || ${bail_out}
+    make || ${bail_out}
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
