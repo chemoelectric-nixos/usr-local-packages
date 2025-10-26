@@ -1,17 +1,26 @@
 #!/bin/zsh
 
-if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK [INSTALL_PIP=no]"
     exit 2
 fi
 
 name=Python
+
+_install_pip="${4}"
+if [[ x${_install_pip} = x ]]; then
+    _install_pip=no
+fi
 
 check_arguments=( test )
 check_jobs=1
 ban_out_of_source_build=yes
 
 templib=`mktemp -d || exit 1` || exit 1
+echo 'GROUP ( /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a )' \
+     > "${templib}/libssl.so"
+echo 'GROUP ( /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a )' \
+     > "${templib}/libcrypto.so"
 echo 'GROUP ( /usr/local/lib/libzstd.a )' > "${templib}/libzstd.so"
 echo 'GROUP ( /usr/local/lib/libgdbm.a )' > "${templib}/libgdbm.so"
 echo 'GROUP ( /usr/local/lib/libgdbm.a /usr/local/lib/libgdbm_compat.a )' \
@@ -28,8 +37,13 @@ configure_arguments=(
     --with-lto=full
     --with-readline=readline
     --with-openssl=/usr/local
-    --with-ensurepip=install
 )
+
+if [[ "${_install_pip}" = no ]] || [[ "${_install_pip}" = false ]]; then
+    configure_arguments+=( --with-ensurepip=no )
+else
+    configure_arguments+=( --with-ensurepip=install )
+fi
 
 source shared/basic.zsh
 
@@ -39,9 +53,14 @@ source shared/basic.zsh
 (cd "${abs_destdir}"/usr/local/bin &&
      ln -s python3 python &&
      ln -s pydoc3 pydoc &&
-     ln -s pip3 pip &&
      ln -s idle3 idle &&
      ln -s python3-config python-config) || ${bail_out}
+if [[ "${_install_pip}" = no ]] || [[ "${_install_pip}" = false ]]; then
+    :
+else
+    (cd "${abs_destdir}"/usr/local/bin &&
+         ln -s pip3 pip) || ${bail_out}
+fi
 
 #
 # Remake the tarball.
