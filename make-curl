@@ -1,11 +1,13 @@
 #!/bin/zsh
 
-if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK [INSTALL_LIBCURL=no]"
     exit 2
 fi
 
 name=curl
+
+_install_libcurl="${4:-no}"
 
 #
 # Workaround via static libraries.
@@ -93,6 +95,15 @@ find "${abs_destdir}" -name '*.la' |
 find "${abs_destdir}" -name '*.pc' |
     xargs sed -i -E "s:-L${static_libraries}/lib::g" \
         || ${bail_out}
+
+if [[ "${_install_libcurl}" = no ]] || [[ "${_install_libcurl}" = false ]]; then
+    rm "${abs_destdir}"/usr/local/bin/curl-config || ${bail_out}
+    rm -R "${abs_destdir}"/usr/local/lib || ${bail_out}
+    rm "${abs_destdir}"/usr/local/share/man/man1/curl-config.1 || ${bail_out}
+    rm -R "${abs_destdir}"/usr/local/share/man/man3 || ${bail_out}
+    rm -R "${abs_destdir}"/usr/local/share/aclocal || ${bail_out}
+    rm -R "${abs_destdir}"/usr/local/include || ${bail_out}
+fi
 
 #
 # Remake the tarball.
