@@ -86,7 +86,7 @@ configure_arguments=(
 
 source shared/basic.zsh
 
-if [[ "${_install_libcurl}" = no ]] || [[ "${_install_libcurl}" = false ]]; then
+if is_no "${_install_libcurl}"; then
     rm "${abs_destdir}"/usr/local/bin/curl-config || ${bail_out}
     rm -R "${abs_destdir}"/usr/local/lib || ${bail_out}
     rm "${abs_destdir}"/usr/local/share/man/man1/curl-config.1 || ${bail_out}
