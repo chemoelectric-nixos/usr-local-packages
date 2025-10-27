@@ -1,5 +1,6 @@
 #!/bin/zsh
 
+source shared/helpers.zsh
 source shared/make_package.zsh
 
 if [[ $# -ne 1 ]]; then
@@ -18,20 +19,7 @@ abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
 packname="${name}-${_package_version}"
-if [[ -e "${abs_src_tarball_dir}/${packname}.tar.xz" ]]; then
-    src_tarball="${abs_src_tarball_dir}/${packname}.tar.xz"
-elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.gz" ]]; then
-    src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
-elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.bz2" ]]; then
-    src_tarball="${abs_src_tarball_dir}/${packname}.tar.bz2"
-elif [[ -e "${abs_src_tarball_dir}/${packname}.tar.zst" ]]; then
-    src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
-elif [[ -e "${abs_src_tarball_dir}/${packname}.tgz" ]]; then
-    src_tarball="${abs_src_tarball_dir}/${packname}.tgz"
-else
-    echo "What is the source tarball?"
-    exit 4
-fi
+src_tarball=`find_src_tarball "${abs_src_tarball_dir}/${packname}"` || ${bail_out}
 bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}"
