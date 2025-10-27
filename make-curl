@@ -86,16 +86,6 @@ configure_arguments=(
 
 source shared/basic.zsh
 
-#
-# Remove temporary directories from .la and .pc files.
-#
-find "${abs_destdir}" -name '*.la' |
-    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
-        || ${bail_out}
-find "${abs_destdir}" -name '*.pc' |
-    xargs sed -i -E "s:-L${static_libraries}/lib::g" \
-        || ${bail_out}
-
 if [[ "${_install_libcurl}" = no ]] || [[ "${_install_libcurl}" = false ]]; then
     rm "${abs_destdir}"/usr/local/bin/curl-config || ${bail_out}
     rm -R "${abs_destdir}"/usr/local/lib || ${bail_out}
@@ -103,6 +93,16 @@ if [[ "${_install_libcurl}" = no ]] || [[ "${_install_libcurl}" = false ]]; then
     rm -R "${abs_destdir}"/usr/local/share/man/man3 || ${bail_out}
     rm -R "${abs_destdir}"/usr/local/share/aclocal || ${bail_out}
     rm -R "${abs_destdir}"/usr/local/include || ${bail_out}
+else
+    #
+    # Remove temporary directories from .la and .pc files.
+    #
+    find "${abs_destdir}" -name '*.la' |
+        xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+            || ${bail_out}
+    find "${abs_destdir}" -name '*.pc' |
+        xargs sed -i -E "s:-L${static_libraries}/lib::g" \
+            || ${bail_out}
 fi
 
 #
