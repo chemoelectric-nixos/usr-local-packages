@@ -16,6 +16,8 @@ function find_src_tarball
         src_tarball="${prefix}.tar.xz"
     elif [[ -e "${prefix}.tar.gz" ]]; then
         src_tarball="${prefix}.tar.gz"
+    elif [[ -e "${prefix}.source.tar.gz" ]]; then
+        src_tarball="${prefix}.source.tar.gz"
     elif [[ -e "${prefix}.tgz" ]]; then
         src_tarball="${prefix}.tgz"
     elif [[ -e "${prefix}.tar.bz2" ]]; then
