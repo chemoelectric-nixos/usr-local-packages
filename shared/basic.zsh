@@ -47,7 +47,7 @@ fi
 abs_destdir="${abs_srcdir}/${_dest_name}"
 
 mkdir -p "${abs_srcdirs_dir}"
-rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+rm -R -f "${abs_srcdir}" || ${bail_out}
 tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
 mkdir -p "${abs_builddir}" || ${bail_out}
 if [[ `whence -w patch_function` = 'patch_function: function' ]]; then

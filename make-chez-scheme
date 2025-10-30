@@ -1,0 +1,67 @@
+#!/bin/zsh
+
+source shared/helpers.zsh
+source shared/make_package.zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=chez-scheme
+
+_package_version="${package_version:-${1:?}}"
+_targeted_host="${targeted_host:-${2:?}}"
+_check="${3:?}"
+_arch="${4:?}"
+_tune="${5:?}"
+
+_dest_name="${dest_name:-«dest»}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/csv${_package_version}.tar.gz"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/csv${_package_version}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdir}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    CFLAGS="-pipe -fPIC -O2 -march=${_arch} -mtune=${_tune}"
+
+    ./configure \
+        --temproot="${abs_destdir}" \
+        --disable-x11 \
+        --threads \
+        --64 \
+        --enable-libffi \
+        --installprefix=/usr/local \
+        --installbin=/usr/local/bin \
+        --installlib=/usr/local/lib \
+        --installman=/usr/local/share/man \
+        --installdoc=/usr/local/share/doc \
+        --installschemename=chez-scheme \
+        --installpetitename=chez-petite \
+        --installscriptname=chez-script \
+        --nogzip-man-pages \
+        CFLAGS+="${CFLAGS}" || ${bail_out}
+
+    make || ${bail_out}
+    is_yes "${_check}" && make test || ${bail_out}
+    make install || ${bail_out}    
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

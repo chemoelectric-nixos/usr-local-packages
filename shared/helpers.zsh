@@ -12,7 +12,9 @@ function find_src_tarball
 {
     local prefix="${1}"
     local src_tarball
-    if [[ -e "${prefix}.tar.xz" ]]; then
+    if [[ -n "${_src_tarball}" ]]; then
+        src_tarball="${_src_tarball}"
+    elif [[ -e "${prefix}.tar.xz" ]]; then
         src_tarball="${prefix}.tar.xz"
     elif [[ -e "${prefix}.tar.gz" ]]; then
         src_tarball="${prefix}.tar.gz"
