@@ -37,27 +37,11 @@ tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
     make -f Makefile-libbz2_so ${(@)make_arguments} || ${bail_out}
     install -d "${abs_destdir}"/usr/local/share || ${bail_out}
     mv "${abs_destdir}"/usr/local/{man,share} || ${bail_out}
-    ln -s libbz2.so.${version} libbz2.so || ${bail_out}
-    install libbz2.so* "${abs_destdir}"/usr/local/lib || ${bail_out}
     install -d "${abs_destdir}"/usr/local/share/doc/"${name}" \
         || ${bail_out}
     install manual.{pdf,html} \
             "${abs_destdir}"/usr/local/share/doc/"${name}" \
         || ${bail_out}
-
-    #
-    # Try to ensure ELF files have /usr/local/lib in the RUNPATH.
-    # Also clean out any /tmp entries.
-    #
-    for f in `find ${abs_destdir}/usr/local -xtype f`; do
-        if [[ -x "${f}" ]]; then
-            patchelf --add-rpath /usr/local/lib "${f}" 2> /dev/null
-            patchelf --shrink-rpath \
-                     --allowed-rpath-prefixes /usr/local:/nix/store \
-                     "${f}" 2> /dev/null
-            true
-        fi
-    done
 
 ) || ${bail_out}
 
