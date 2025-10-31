@@ -29,8 +29,8 @@ git_check_out "${abs_repo_dir}" "${_revision}"
 packname="${name}-${_revision}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_repo_dir}"
-abs_builddir="${abs_srcdirs_dir}/${packname}/«build»"
-abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
+abs_builddir="${abs_srcdirs_dir}/${packname}/___build___"
+abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
 
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 install -d "${abs_builddir}" || ${bail_out}
@@ -48,7 +48,7 @@ install -d "${abs_builddir}" || ${bail_out}
     env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" \
         ./configure \
         --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt \
-        --enable-shared-commands \
+        --disable-shared-commands \
         --enable-heuristic-optimization \
         --enable-year2038 || ${bail_out}
 
