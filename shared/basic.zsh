@@ -14,8 +14,8 @@ else
     _check="${3}"
 fi
 
-_build_name="${build_name:-«build»}"
-_dest_name="${dest_name:-«dest»}"
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
 
 bail_out=( exit 1 )
 if [[ x${check_arguments} = x ]]; then
