@@ -1,0 +1,25 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=guile
+
+ban_enable_silent_rules=yes
+
+build_name=__build__
+dest_name=__dest__
+
+environment_variables=(
+    CFLAGS="-std=gnu11${CFLAGS+ }${CFLAGS}"
+)
+configure_arguments=(
+    --disable-silent-rules
+    --disable-nls
+    --enable-year2038
+    --enable-jit=yes
+)
+
+source shared/basic.zsh
