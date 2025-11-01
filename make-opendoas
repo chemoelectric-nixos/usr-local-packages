@@ -22,7 +22,14 @@ function patch_function
         -e 's|^([[:space:]]+)chown|\1doas chown|' \
         -e 's|^([[:space:]]+)chmod|\1doas chmod|' \
         GNUmakefile
+
+    #
+    # To make a static doas, use our own libc script.
+    #
+    echo 'GROUP ( /usr/local/lib/libc.a )' > libc.so
 }
+
+export LIBRARY_PATH="`realpath .`:/usr/local/lib"
 
 environment_variables=( )
 configure_arguments=(
@@ -33,5 +40,6 @@ configure_arguments=(
     --host=x86_64-unknown-linux-gnu
     --target=x86_64-unknown-linux-gnu
 )
+make_arguments=( CFLAGS='-static' )
 
 source shared/basic.zsh
