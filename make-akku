@@ -1,8 +1,9 @@
 #!/bin/zsh
 
 #
-# WARNING: In my experience, Akku can bring a system to its knees. I
-#          myself do not have it installed.
+# WARNING: In my experience, Akku can make it so you have to
+#          hard-reboot the computer. I myself do not have it
+#          installed.
 #
 #              -- Barry Schwartz (2025-11-01)
 #
