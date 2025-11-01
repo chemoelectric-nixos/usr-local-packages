@@ -16,6 +16,13 @@ ban_out_of_source_build=yes
 function patch_function
 {
     #
+    # Change the safepath.
+    #
+    sed -i -E \
+        '/safepath/s|/bin:/sbin:/usr/bin:/usr/sbin:|/run/wrappers/bin:/run/current-system/sw/bin:|' \
+        doas.c
+
+    #
     # Perform a couple of operations with root privileges.
     #
     sed -i -E \
@@ -34,6 +41,7 @@ export LIBRARY_PATH="`realpath .`:/usr/local/lib"
 environment_variables=( )
 configure_arguments=(
     --prefix=/usr/local
+    --sysconfdir=/etc
     --without-pam               # Keep things simple. Avoid PAM.
     --with-shadow
     --build=x86_64-unknown-linux-gnu
