@@ -1,5 +1,12 @@
 #!/bin/zsh
 
+#
+# WARNING: In my experience, Akku can bring a system to its knees. I
+#          myself do not have it installed.
+#
+#              -- Barry Schwartz (2025-11-01)
+#
+
 source shared/make_package.zsh
 source shared/git.zsh
 
