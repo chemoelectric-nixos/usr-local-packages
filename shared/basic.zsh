@@ -6,12 +6,12 @@ if [[ x${name} = x ]]; then
     exit 3
 fi
 
-_package_version="${package_version:-${1}}"
-_targeted_host="${targeted_host:-${2}}"
+_package_version="${package_version:-${1?}}"
+_targeted_host="${targeted_host:-${2?}}"
 if is_yes "${ban_check}"; then
     _check=no
 else
-    _check="${3}"
+    _check="${check:-${3?}}"
 fi
 
 _build_name="${build_name:-___build___}"
@@ -31,7 +31,7 @@ if is_yes "${ban_parallel_make}"; then
     check_jobs=1
 else
     jobs="${jobs:-24}"
-    check_jobs="${check_jobs:-"${jobs}"}"
+    check_jobs="${check_jobs:-"${jobs:?}"}"
 fi
 
 silent_rules="${silent_rules:-yes}"

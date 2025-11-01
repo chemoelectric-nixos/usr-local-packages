@@ -1,0 +1,37 @@
+#!/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+targeted_host=x86_64-unknown-linux-gnu
+check=no
+
+name=opendoas
+
+ban_enable_silent_rules=yes
+ban_out_of_source_build=yes
+
+function patch_function
+{
+    #
+    # Perform a couple of operations with root privileges.
+    #
+    sed -i -E \
+        -e 's|^([[:space:]]+)chown|\1doas chown|' \
+        -e 's|^([[:space:]]+)chmod|\1doas chmod|' \
+        GNUmakefile
+}
+
+environment_variables=( )
+configure_arguments=(
+    --prefix=/usr/local
+    --without-pam               # Keep things simple. Avoid PAM.
+    --with-shadow
+    --build=x86_64-unknown-linux-gnu
+    --host=x86_64-unknown-linux-gnu
+    --target=x86_64-unknown-linux-gnu
+)
+
+source shared/basic.zsh
