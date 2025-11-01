@@ -19,7 +19,7 @@ fi
 _arch="${4}"
 _tune="${5}"
 
-_dest_name="${dest_name:-«dest»}"
+_dest_name="${dest_name:-___dest___}"
 
 bail_out=( exit 1 )
 if [[ x${check_arguments} = x ]]; then

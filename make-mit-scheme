@@ -23,7 +23,7 @@ src_tarball="${abs_src_tarball_dir}/${packname}-x86-64.tar.gz"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
 abs_builddir="${abs_srcdir}/src"
-abs_destdir="${abs_srcdir}/«dest»"
+abs_destdir="${abs_srcdir}/___dest___"
 
 mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}

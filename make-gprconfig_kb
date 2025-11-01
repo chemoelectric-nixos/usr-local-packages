@@ -21,7 +21,7 @@ packname="${name}-${_package_version}"
 src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-for-any-host.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
-abs_destdir="${abs_srcdir}/«dest»"
+abs_destdir="${abs_srcdir}/___dest___"
 
 install -d "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}

@@ -33,8 +33,8 @@ fi
 packname="${name}-${_revision}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
 abs_srcdir="${abs_repo_dir}"
-abs_builddir="${abs_srcdirs_dir}/${packname}/«build»"
-abs_destdir="${abs_srcdirs_dir}/${packname}/«dest»"
+abs_builddir="${abs_srcdirs_dir}/${packname}/___build___"
+abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
 
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
 install -d "${abs_builddir}" || ${bail_out}

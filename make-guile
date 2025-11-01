@@ -9,9 +9,6 @@ name=guile
 
 ban_enable_silent_rules=yes
 
-build_name=__build__
-dest_name=__dest__
-
 environment_variables=(
     CFLAGS="-std=gnu11${CFLAGS+ }${CFLAGS}"
 )

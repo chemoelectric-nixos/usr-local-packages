@@ -1,0 +1,61 @@
+#!/bin/zsh
+
+source shared/helpers.zsh
+source shared/make_package.zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=sagittarius
+
+_package_version="${1:?}"
+_targeted_host="${2:?}"
+_check="${3:?}"
+_arch="${4:?}"
+_tune="${5:?}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball=`find_src_tarball "${abs_src_tarball_dir}/${packname}"` || ${bail_out}
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/___dest___"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+
+    find "${abs_srcdir}" -type f -print0 |
+        xargs -0 sed -i \
+              's|static inline double roundeven|static inline double do_not_use_this_roundeven|'
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DINSTALL_SRFI_138=OFF \
+          -DCMAKE_C_FLAGS="-pipe -fPIC -march=${_arch} -mtune=${_tune}" \
+          -DINSTALL_PREFIX=/usr/local \
+          -DFFI=/usr/local/lib/libffi.a \
+          -DZLIB_INCLUDE_DIR=/usr/local/include \
+          -DZLIB_LIBRARY=/usr/local/lib/libz.a \
+          -DODBC_INCLUDE_DIR=/usr/local/include \
+          -DODBC_LIBRARIES=/usr/local/lib/libiodbc.so \
+          . || ${bail_out}
+    make || ${bail_out}
+    is_no "${_check}" || make check || ${bail_out}
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

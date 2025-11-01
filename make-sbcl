@@ -44,7 +44,7 @@ else
     abs_srcdir="${abs_srcdirs_dir}/${packname}"
 fi
 abs_builddir="${abs_srcdir}"
-abs_destdir="${abs_srcdir}/«dest»"
+abs_destdir="${abs_srcdir}/___dest___"
 
 mkdir -p "${abs_srcdirs_dir}"
 rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}

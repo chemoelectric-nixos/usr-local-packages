@@ -16,7 +16,7 @@ _check="${3:?}"
 _arch="${4:?}"
 _tune="${5:?}"
 
-_dest_name="${dest_name:-«dest»}"
+_dest_name="${dest_name:-___dest___}"
 
 bail_out=( exit 1 )
 
@@ -52,14 +52,18 @@ mkdir -p "${abs_builddir}" || ${bail_out}
         --installlib=/usr/local/lib \
         --installman=/usr/local/share/man \
         --installdoc=/usr/local/share/doc \
-        --installschemename=chez-scheme \
-        --installpetitename=chez-petite \
-        --installscriptname=chez-script \
         --nogzip-man-pages \
         CFLAGS+="${CFLAGS}" || ${bail_out}
 
+    # Akku and such do not work unaltered, unless we call Chez by its
+    # original names.
+    #
+    #--installschemename=chez-scheme
+    #--installpetitename=chez-petite
+    #--installscriptname=chez-script
+
     make || ${bail_out}
-    is_yes "${_check}" && make test || ${bail_out}
+    is_no "${_check}" || make test || ${bail_out}
     make install || ${bail_out}    
 
 ) || ${bail_out}

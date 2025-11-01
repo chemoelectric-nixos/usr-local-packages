@@ -1,0 +1,88 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+source shared/git.zsh
+
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 REVISION CHEZ_REVISION"
+    exit 3
+fi
+
+name=akku
+
+_revision="${1:?}"
+_chez_revision="${2:?}"
+_targeted_host="x86_64-unknown-linux-gnu"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+git_check_out "${abs_repo_dir}" "${_revision}"
+
+packname="${name}-${_revision}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_repo_dir}"
+abs_builddir="${abs_srcdirs_dir}/${packname}/___build___"
+abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+install -d "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    # Copy the sources.
+    cp --archive --link --update=none \
+       "${abs_srcdir}"/* "${abs_srcdir}"/.akku \
+       "${abs_builddir}" \
+        || ${bail_out}
+
+    tar xf "${abs_src_tarball_dir}/csv${_chez_revision}.tar.gz"
+    export CHEZSOURCEDIR=`realpath csv${_chez_revision}`
+
+    eval $(.akku/env -s)
+
+    # FIXME!!!!!  WARNING!!!! CAREFUL!!!!!! ###########
+    #mkdir -p ~/.local/share/akku/keys.d
+    #cp akku-archive-*.gpg ~/.local/share/akku/keys.d
+    ###################################################
+
+    the_commands=(
+        "bin/akku.sps update"
+        "bin/akku.sps install"
+        "private/build.chezscheme.sps"
+    )
+    for cmd in "${(@)the_commands}"; do
+        printf "%s\n" "${cmd}"
+        eval "${cmd}"
+    done
+
+    tar xf akku-*-beta.0.amd64-linux.tar.* || ${bail_out}
+    cd akku-*-beta.0.amd64-linux || ${bail_out}
+
+    abs_bindir="${abs_destdir}/usr/local/bin"
+    abs_libdir="${abs_destdir}/usr/local/lib"
+    abs_sharedir="${abs_destdir}/usr/local/share"
+
+    install -d "${abs_bindir}" || ${bail_out}
+    install -d "${abs_libdir}" || ${bail_out}
+    install -d "${abs_sharedir}" || ${bail_out}
+
+    sed -e "s|@PREFIX@|/usr/local|g" \
+        lib/x86_64-linux-gnu/akku/akku.sh.in \
+        > lib/x86_64-linux-gnu/akku/akku.sh || ${bail_out}
+    chmod 755 lib/x86_64-linux-gnu/akku/akku.sh || ${bail_out}
+    rm -f lib/x86_64-linux-gnu/akku/akku.sh.in
+    cp -a lib/* "${abs_libdir}" || ${bail_out}
+    cp -a share/* "${abs_sharedir}" || ${bail_out}
+    (cd "${abs_bindir}" &&
+         ln -s ../lib/x86_64-linux-gnu/akku/akku.sh akku \
+             || ${bail_out}) || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

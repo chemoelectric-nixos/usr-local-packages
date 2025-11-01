@@ -19,7 +19,7 @@ version="${1}"
 packname="${name}-${version}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.zst"
 abs_srcdir="${abs_srcdirs_dir}/${packname}"
-abs_destdir="${abs_srcdir}/«dest»"
+abs_destdir="${abs_srcdir}/___dest___"
 bail_out=( exit 1 )
 
 src_tarball="${abs_src_tarball_dir}/${packname}.tar.zst"
