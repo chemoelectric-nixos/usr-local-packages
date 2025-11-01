@@ -11,6 +11,8 @@ fi
 # Make Gauche Scheme from the Git sources.
 name=Gauche
 
+_enable_shared_commands="${enable_shared_commands:-yes}"
+
 _revision="${1}"
 _targeted_host="${2}"
 _check="${3}"
@@ -48,7 +50,7 @@ install -d "${abs_builddir}" || ${bail_out}
     env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" \
         ./configure \
         --with-ca-bundle=/etc/ssl/certs/ca-bundle.crt \
-        --disable-shared-commands \
+        --enable-shared-commands="${_enable_shared_commands}" \
         --enable-heuristic-optimization \
         --enable-year2038 || ${bail_out}
 

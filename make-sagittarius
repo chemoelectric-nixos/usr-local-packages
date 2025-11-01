@@ -10,6 +10,8 @@ fi
 
 name=sagittarius
 
+_install_srfi_138="${install_srfi_138:-ON}"
+
 _package_version="${1:?}"
 _targeted_host="${2:?}"
 _check="${3:?}"
@@ -43,7 +45,7 @@ mkdir -p "${abs_builddir}" || ${bail_out}
 
     cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
           -DCMAKE_BUILD_TYPE=Release \
-          -DINSTALL_SRFI_138=OFF \
+          -DINSTALL_SRFI_138="${_install_srfi_138}" \
           -DCMAKE_C_FLAGS="-pipe -fPIC -march=${_arch} -mtune=${_tune}" \
           -DINSTALL_PREFIX=/usr/local \
           -DFFI=/usr/local/lib/libffi.a \
