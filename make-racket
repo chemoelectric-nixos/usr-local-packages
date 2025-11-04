@@ -1,0 +1,76 @@
+#!/usr/bin/env nix-shell
+#! nix-shell -i zsh -p zsh.out coreutils.out cairo.out fontconfig.lib glib.out gtk3.out libGL.out libjpeg.out libpng.out pango.out unixODBC.out libiconvReal.out libz.out ncurses.out openssl.out sqlite.out.out pixman.out expat.out freetype.out glib.out xorg.appres.out xorg.bdftopcf.out xorg.bitmap.out xorg.editres.out xorg.encodings.out xorg.gccmakedep.out xorg.iceauth.out xorg.ico.out xorg.imake.out xorg.libFS.out xorg.libICE.out xorg.libSM.out xorg.libWindowsWM.out xorg.libX11.out xorg.libXScrnSaver.out xorg.libXTrap.out xorg.libXau.out xorg.libXaw.out xorg.libXcomposite.out xorg.libXcursor.out xorg.libXdamage.out xorg.libXdmcp.out xorg.libXext.out xorg.libXfixes.out xorg.libXfont.out xorg.libXfont2.out xorg.libXft.out xorg.libXi.out xorg.libXinerama.out xorg.libXmu.out xorg.libXp.out xorg.libXpm.out xorg.libXpresent.out xorg.libXrandr.out xorg.libXrender.out xorg.libXres.out xorg.libXt.out xorg.libXtst.out xorg.libXv.out xorg.libXvMC.out xorg.libXxf86dga.out xorg.libXxf86misc.out xorg.libXxf86vm.out xorg.libdmx.out xorg.libfontenc.out xorg.libpciaccess.out xorg.libpthreadstubs.out xorg.libxcb.out xorg.libxcvt.out xorg.libxkbfile.out xorg.libxshmfence.out xorg.listres.out xorg.lndir.out xorg.luit.out xorg.makedepend.out xorg.mkfontdir.out xorg.mkfontscale.out xorg.oclock.out xorg.pixman.out xorg.sessreg.out xorg.setxkbmap.out xorg.smproxy.out xorg.transset.out xorg.twm.out xorg.utilmacros.out xorg.viewres.out xorg.wrapWithXFileSearchPathHook.out xorg.x11perf.out xorg.xauth.out xorg.xbacklight.out xorg.xbitmaps.out xorg.xcalc.out xorg.xcbproto.out xorg.xcbutil.out xorg.xcbutilcursor.out xorg.xcbutilerrors.out xorg.xcbutilimage.out xorg.xcbutilkeysyms.out xorg.xcbutilrenderutil.out xorg.xcbutilwm.out xorg.xclock.out xorg.xcmsdb.out xorg.xcompmgr.out xorg.xconsole.out xorg.xcursorgen.out xorg.xcursorthemes.out xorg.xdm.out xorg.xdpyinfo.out xorg.xdriinfo.out xorg.xev.out xorg.xeyes.out xorg.xfd.out xorg.xfontsel.out xorg.xfs.out xorg.xfsinfo.out xorg.xgamma.out xorg.xgc.out xorg.xhost.out xorg.xinit.out xorg.xinput.out xorg.xkbcomp.out xorg.xkbevd.out xorg.xkbprint.out xorg.xkbutils.out xorg.xkeyboardconfig.out xorg.xkill.out xorg.xload.out xorg.xlsatoms.out xorg.xlsclients.out xorg.xlsfonts.out xorg.xmag.out xorg.xmessage.out xorg.xmodmap.out xorg.xmore.out xorg.xorgcffiles.out xorg.xorgdocs.out xorg.xorgproto.out xorg.xorgserver.out xorg.xorgsgmldoctools.out xorg.xpr.out xorg.xprop.out xorg.xrandr.out xorg.xrdb.out xorg.xrefresh.out xorg.xset.out xorg.xsetroot.out xorg.xsm.out xorg.xstdcmap.out xorg.xtrans.out xorg.xtrap.out xorg.xvfb.out xorg.xvinfo.out xorg.xwd.out xorg.xwininfo.out xorg.xwud
+
+source shared/helpers.zsh
+source shared/make_package.zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=racket
+
+_package_version="${package_version:-${1?}}"
+_targeted_host="${targeted_host:-${2?}}"
+_check="${check:-${3?}}"
+
+if is_yes "${_check}"; then
+    echo "To test your Racket build is not supported by this script."
+    exit 10
+fi
+
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+jobs="${jobs:-24}"
+check_jobs="${check_jobs:-"${jobs:?}"}"
+
+packname="${name}-${_package_version}"
+src_tarball=`find_src_tarball "${abs_src_tarball_dir}/${packname}"` || ${bail_out}
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/${_build_name}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdir}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    libsdir="${abs_srcdir}/___libraries-directory___"
+    mkdir -p "${libsdir}"
+    for dir in "${(ps. .)buildInputs}"; do
+        lib="${dir}/lib"
+        if [[ -e "${lib}" ]]; then
+            (cd "${libsdir}" &&
+                 cp --recursive --dereference --symbolic-link \
+                    --no-preserve=mode --update=none "${lib}" .)
+        fi
+    done
+    export LD_LIBRARY_PATH="/usr/local/lib:${libsdir}/lib"
+
+    env CFLAGS="${CFLAGS}${CFLAGS+ }-std=gnu99" \
+        ../src/configure \
+        --prefix=/usr/local \
+        --build=x86_64-unknown-linux-gnu \
+        --host=x86_64-unknown-linux-gnu \
+        --target=x86_64-unknown-linux-gnu \
+        --enable-cs \
+        --enable-bc || ${bail_out}
+    make -j"${jobs}" || ${bail_out}
+    make -j"${jobs}" bc || ${bail_out}
+    make -j"${jobs}" install DESTDIR="${abs_destdir}" || ${bail_out}
+    make -j"${jobs}" install-bc DESTDIR="${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
