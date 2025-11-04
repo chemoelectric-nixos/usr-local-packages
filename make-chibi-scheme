@@ -7,12 +7,21 @@ fi
 
 name=chibi-scheme
 
-_arch="${4}"
-_tune="${5}"
+_arch="${4:?}"
+_tune="${5:?}"
 
 ban_out_of_source_build=yes
 
 _cflags='CFLAGS=-pipe -fPIC -march='"${_arch}"' -mtune='"${_tune}"
+
+function patch_function
+{
+    sed -i -E \
+        -e '1s|/bin/sh|/usr/bin/env nix-shell|' \
+        -e '1a\
+#! nix-shell -i bash -p bash coreutils' \
+        tools/snow-chibi
+}
 
 environment_variables=( )
 configure_arguments=( )

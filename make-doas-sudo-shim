@@ -1,5 +1,10 @@
 #!/bin/zsh
 
+#
+# THIS PACKAGE PROBABLY IS REDUNDANT. Probably you can use either this
+# or the Nixpkgs package and it will make little difference.
+#
+
 source shared/helpers.zsh
 source shared/make_package.zsh
 

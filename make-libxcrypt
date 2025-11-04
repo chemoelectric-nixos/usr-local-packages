@@ -1,0 +1,32 @@
+#!/bin/zsh
+
+#
+# THIS PACKAGE HAS BEEN MADE OBSOLETE BY THE update-libxcrypt-static
+# SCRIPT OF glibc-libre
+#
+# You should instead include both pkgs.libxcrypt and
+# pkgs.libxcrypt-static in your /usr/local’s core. They are more
+# likely to be configured correctly for the system.
+#
+
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=libxcrypt
+
+environment_variables=( )
+configure_arguments=(
+    --enable-shared
+    --enable-static
+    --prefix=/usr/local
+    --libdir=/usr/local/lib
+    --enable-obsolete-api=no
+    --disable-failure-tokens
+    --enable-hashes=all
+    --enable-year2038
+)
+
+source shared/basic.zsh

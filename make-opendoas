@@ -1,5 +1,10 @@
 #!/bin/zsh
 
+#
+# THIS PACKAGE HAS BEEN MADE OBSOLETE BY THE update-doas-that-does
+# SCRIPT OF glibc-libre
+#
+
 if [[ $# -ne 1 ]]; then
     echo "Usage: $0 PACKAGE_VERSION"
     exit 2
