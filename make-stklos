@@ -1,0 +1,26 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=stklos
+
+ban_out_of_source_build=yes
+
+environment_variables=(
+    CFLAGS="-std=gnu17${CFLAGS+ }${CFLAGS}"
+)
+configure_arguments=(
+    -C
+    --enable-threads
+    --enable-ffi
+    --enable-fast-math-control
+    --without-provided-gc
+    --without-provided-bignum
+    --without-provided-regexp
+    --without-provided-ffi
+)
+
+source shared/basic.zsh
