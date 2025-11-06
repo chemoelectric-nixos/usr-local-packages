@@ -1,0 +1,32 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=unixODBC
+
+environment_variables=( CFLAGS="-std=gnu17" )
+configure_arguments=(
+    --enable-shared
+    --enable-static
+    --enable-threads
+    --enable-readline
+    --enable-inicaching
+    --enable-drivers
+    --enable-driver-config
+    --disable-fastvalidate
+    --enable-iconv
+    --enable-utf8ini
+    --disable-singleenv
+    --disable-stats
+    --disable-setlibversion
+    --disable-handlemap
+    --enable-stricterror
+    --disable-cursor-ver
+    --disable-ltdl-install
+    --disable-iconvperdriver
+)
+
+source shared/basic.zsh
