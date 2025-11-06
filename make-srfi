@@ -1,0 +1,35 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 0 ]]; then
+    echo "Usage: $0"
+    exit 2
+fi
+
+name=srfi
+
+# A «live» installation of the Scheme SRFIs into
+# /usr/local/share/doc/srfi
+
+srfi_url="https://srfi.schemers.org/srfi.tgz"
+
+bail_out=( exit 1 )
+
+_dest_name="${dest_name:-___dest___}"
+
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
+abs_destdir="${abs_srcdirs_dir}/${packname}/${_dest_name}"
+
+abs_docdir="${abs_destdir}/usr/local/share/doc/${name}"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+mkdir -p "${abs_docdir}" || ${bail_out}
+curl --fail "${srfi_url}" | gzip -d | tar -C "${abs_docdir}" -x \
+    || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}

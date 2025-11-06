@@ -52,7 +52,7 @@ mkdir -p "${abs_builddir}" || ${bail_out}
           -DZLIB_INCLUDE_DIR=/usr/local/include \
           -DZLIB_LIBRARY=/usr/local/lib/libz.a \
           -DODBC_INCLUDE_DIR=/usr/local/include \
-          -DODBC_LIBRARIES=/usr/local/lib/libiodbc.so \
+          -DODBC_LIBRARIES=/usr/local/lib/libodbc.a \
           . || ${bail_out}
     make || ${bail_out}
     is_no "${_check}" || make check || ${bail_out}
