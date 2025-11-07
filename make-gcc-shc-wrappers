@@ -1,0 +1,55 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 0 ]]; then
+    echo "Usage: $0"
+    exit 2
+fi
+
+name=gcc-shc-wrappers
+
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
+
+bail_out=( exit 1 )
+
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-anybody.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/${_build_name}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdir}" || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    abs_bindir="${abs_destdir}/usr/local/bin"
+
+    export CC=gcc
+    export CFLAGS="-O2 -march=x86-64 -mtune=k8"
+
+    for year in 89 99 11 17 23 2y; do
+        for who in std gnu; do
+            whoyr="${who}${year}"
+            command="gcc-${whoyr}"
+            script="${command}.sh"
+            flag="-std=${whoyr}"
+            echo '#!/bin/sh' > ${script} || ${bail_out}
+            echo "exec gcc ${flag} \"\${@}\"" >> ${script} || ${bail_out}
+            shc -v -r -f ${script} -o ${command} || ${bail_out}
+            install -D -m 755 ${command} "${abs_bindir}/${command}" \
+                || ${bail_out}
+        done
+    done
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" ban-adjust_runpaths \
+    || ${bail_out}
