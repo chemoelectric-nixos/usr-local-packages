@@ -1,0 +1,50 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION"
+    exit 2
+fi
+
+# Slib sources. (No ‘installation’.)
+name=slib
+
+_package_version="${package_version:-${1?}}"
+
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+silent_rules="${silent_rules:-yes}"
+
+packname="${name}-${_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.zip"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-for-anybody.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+rm -R -f "${abs_srcdir}" || ${bail_out}
+mkdir -p "${abs_srcdir}" || ${bail_out}
+(
+    cd "${abs_srcdir}" || ${bail_out}
+    unzip "${src_tarball}" || ${bail_out}
+) || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    abs_sharedir="${abs_destdir}"/usr/local/share
+
+    install -d "${abs_sharedir}" || ${bail_out}
+    cp -R slib "${abs_sharedir}" || ${bail_out}
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" \
+             ban_adjust_runpaths || ${bail_out}

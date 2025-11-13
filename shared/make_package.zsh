@@ -17,7 +17,7 @@ function make_package
     local bin_tarball=`realpath "${1}" || exit 1` || exit 1
     local abs_destdir=`realpath "${2}" || exit 1` || exit 1
 
-    if [[ "${3}" != "ban-adjust_runpaths" ]]; then
+    if [[ "${3}" != "ban_adjust_runpaths" ]]; then
         adjust_runpaths "${abs_destdir}"/usr/local
     fi
 
