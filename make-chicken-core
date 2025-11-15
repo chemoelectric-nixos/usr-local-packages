@@ -3,19 +3,24 @@
 source shared/make_package.zsh
 source shared/git.zsh
 
-if [[ $# -ne 4 ]] && [[ $# -ne 5 ]]; then
-    echo "Usage: $0 REVISION TARGETED_HOST ARCH TUNE [USE_CHICKEN_BOOT=no]"
+#
+# If PREFIX be set, it is assumed to be under /usr/local
+#
+if [[ $# -lt 4 ]] || [[ $# -gt 7 ]]; then
+    echo "Usage: $0 REVISION TARGETED_HOST ARCH TUNE [PROGRAM_SUFFIX] [CHICKEN_BOOT] [PREFIX]"
     exit 3
 fi
 
 # Make CHICKEN Scheme from the Git sources.
 name=chicken-core
 
-_revision="${1}"
-_targeted_host="${2}"
-_arch="${3}"
-_tune="${4}"
-_use_chicken_boot="${5:-no}"
+_revision="${1?}"
+_targeted_host="${2?}"
+_arch="${3?}"
+_tune="${4?}"
+_program_suffix="${5}"
+_chicken_boot="${6}"
+_prefix="${7:-/usr/local}"
 
 bail_out=( exit 1 )
 
@@ -42,16 +47,16 @@ install -d "${abs_builddir}" || ${bail_out}
     cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
         || ${bail_out}
 
-    if [[ "${_use_chicken_boot}" != no ]] &&
-           [[ "${_use_chicken_boot}" != false ]]; then
-        chicken_boot_arguments="--chicken=/usr/local/libexec/chicken-core/chicken-boot"
+    if [[ -n "${_chicken_boot}" ]]; then
+        chicken_boot_arguments="--chicken=${_chicken_boot}"
     else
         chicken_boot_arguments=""
     fi
 
     env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" ./configure \
-        --prefix=/usr/local \
+        --prefix="${_prefix}" \
         --platform=linux \
+        --program-suffix="${_program_suffix}" \
         ${chicken_boot_arguments}
 
     make || ${bail_out}
@@ -59,6 +64,12 @@ install -d "${abs_builddir}" || ${bail_out}
     make install DESTDIR="${abs_destdir}" || ${bail_out}
 
 ) || ${bail_out}
+
+for f in `find ${abs_destdir} -xtype f`; do
+    if [[ -x "${f}" ]]; then
+        patchelf --add-rpath "${_prefix}"/lib "${f}" 2> /dev/null || true
+    fi
+done
 
 make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
 
