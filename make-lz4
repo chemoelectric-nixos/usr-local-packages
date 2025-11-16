@@ -1,0 +1,23 @@
+#!/bin/zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=lz4
+
+_arch="${4?}"
+_tune="${5?}"
+
+ban_out_of_source_build=yes
+ban_configure=yes
+
+environment_variables=( )
+configure_arguments=( )
+make_arguments=(
+    V=1
+    CC="gcc -pipe -fPIC -march=${_arch} -mtune=${_tune}"
+)
+
+source shared/basic.zsh
