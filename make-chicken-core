@@ -53,15 +53,36 @@ install -d "${abs_builddir}" || ${bail_out}
         chicken_boot_arguments=""
     fi
 
-    env CFLAGS="-pipe -fPIC -O2 -march=""${_arch}"" -mtune=""${_tune}" ./configure \
-        --prefix="${_prefix}" \
-        --platform=linux \
-        --program-suffix="${_program_suffix}" \
-        ${chicken_boot_arguments}
+    export CFLAGS="-pipe -fPIC -O2 -march=${_arch} -mtune=${_tune}"
 
-    make || ${bail_out}
-    make check || ${bail_out}
-    make install DESTDIR="${abs_destdir}" || ${bail_out}
+    if [ -x configure ]; then
+        env CFLAGS="${CFLAGS}" ./configure \
+            --c-compiler=gcc-gnu17 \
+            --prefix="${_prefix}" \
+            --platform=linux \
+            --program-suffix="${_program_suffix}" \
+            ${chicken_boot_arguments} || ${bail_out}
+        make || ${bail_out}
+        make check || ${bail_out}
+        make install \
+             DESTDIR="${abs_destdir}" || ${bail_out}
+    else
+        make C_COMPILER=gcc-gnu17 \
+             C_COMPILER_OPTIMIZATION_OPTIONS="${CFLAGS}" \
+             PREFIX="${_prefix}" \
+             PROGRAM_SUFFIX="${_program_suffix}" || ${bail_out}
+        make check \
+             C_COMPILER=gcc-gnu17 \
+             C_COMPILER_OPTIMIZATION_OPTIONS="${CFLAGS}" \
+             PREFIX="${_prefix}" \
+             PROGRAM_SUFFIX="${_program_suffix}" || ${bail_out}
+        make install \
+             C_COMPILER=gcc-gnu17 \
+             C_COMPILER_OPTIMIZATION_OPTIONS="${CFLAGS}" \
+             PREFIX="${_prefix}" \
+             DESTDIR="${abs_destdir}" \
+             PROGRAM_SUFFIX="${_program_suffix}" || ${bail_out}
+    fi
 
 ) || ${bail_out}
 
