@@ -1,0 +1,55 @@
+#!/bin/zsh
+
+source shared/helpers.zsh
+
+if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK [ADVANCED_FEATURES=yes]"
+    exit 2
+fi
+
+name=gambit
+
+# I think ADVANCED_FEATURES requires a bootstrap.
+_advanced_features="${4:=yes}"
+
+ban_out_of_source_build=yes
+ban_enable_silent_rules=yes
+
+if is_yes "${_advanced_features}"; then
+    extra_arguments=(
+        --enable-type-checking
+        --enable-auto-forcing
+        --enable-sharp-dot
+        --enable-bignum
+        --enable-ratnum
+        --enable-cpxnum
+        --enable-{s8,u16,s16,u32,s32,u64,s64,f32}vector
+        --enable-smp
+    )
+else
+    extra_arguments=( )
+fi
+
+environment_variables=( EXTRA_USR_LOCAL_CFLAGS="-O1" )
+configure_arguments=(
+    --prefix=/usr/local
+    --enable-targets=js,python,ruby,java,php
+    --disable-shared
+    --enable-pic
+    --disable-absolute-shared-libs
+    --enable-single-host
+    --enable-gcc-opts
+    --enable-gnu-gcc-no-strict-aliasing
+    --enable-march="${_arch}"
+    --enable-trust-c-tco
+    --enable-dynamic-clib
+    --enable-symlinks
+    --enable-help-browser=falkon
+    --enable-dynamic-tls
+    --enable-thread-system=posix
+    # --enable-openssl
+    "${(@)extra_arguments}"
+)
+make_arguments=( all )
+
+source shared/basic.zsh
