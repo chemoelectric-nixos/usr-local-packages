@@ -83,4 +83,6 @@ fi
 
 ) || ${bail_out}
 
-make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
+if is_no "${ban_make_package}"; then
+    make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
+fi

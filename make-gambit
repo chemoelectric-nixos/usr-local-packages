@@ -9,6 +9,8 @@ fi
 
 name=gambit
 
+ban_make_package=yes
+
 # I think ADVANCED_FEATURES requires a bootstrap.
 _advanced_features="${4:=yes}"
 
@@ -33,7 +35,8 @@ fi
 environment_variables=( EXTRA_USR_LOCAL_CFLAGS="-O1" )
 configure_arguments=(
     --prefix=/usr/local
-    --enable-targets=js,python,ruby,java,php
+    #--enable-targets=js,python,ruby,java,php
+    --enable-targets=js,python,ruby
     --disable-shared
     --enable-pic
     --disable-absolute-shared-libs
@@ -47,9 +50,17 @@ configure_arguments=(
     --enable-help-browser=falkon
     --enable-dynamic-tls
     --enable-thread-system=posix
-    # --enable-openssl
+    --enable-openssl
     "${(@)extra_arguments}"
 )
 make_arguments=( all )
 
 source shared/basic.zsh
+
+mkdir -p "${abs_destdir}"/usr/local/share/doc || ${bail_out}
+mv "${abs_destdir}"/usr/local/doc \
+   "${abs_destdir}"/usr/local/share/doc/gambit || ${bail_out}
+
+rm -R -f "${abs_destdir}"/usr/local/info || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
