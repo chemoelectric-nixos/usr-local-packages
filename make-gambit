@@ -1,6 +1,8 @@
 #!/bin/zsh
 
 source shared/helpers.zsh
+source shared/make_package.zsh
+source shared/git.zsh
 
 if [[ $# -ne 3 ]] && [[ $# -ne 4 ]]; then
     echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK [ADVANCED_FEATURES=yes]"
@@ -9,53 +11,89 @@ fi
 
 name=gambit
 
-ban_make_package=yes
+_revision="${1?}"
+_targeted_host="${2?}"
+_check="${3?}"
 
 # I think ADVANCED_FEATURES requires a bootstrap.
 _advanced_features="${4:=yes}"
 
-ban_out_of_source_build=yes
-ban_enable_silent_rules=yes
+jobs="${jobs:-24}"
+check_jobs="${check_jobs:-"${jobs:?}"}"
 
-if is_yes "${_advanced_features}"; then
-    extra_arguments=(
-        --enable-type-checking
-        --enable-auto-forcing
-        --enable-sharp-dot
-        --enable-bignum
-        --enable-ratnum
-        --enable-cpxnum
-        --enable-{s8,u16,s16,u32,s32,u64,s64,f32}vector
-        --enable-smp
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+git_check_out "${abs_repo_dir}" "${_revision}"
+
+packname="${name}-${_revision}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_repo_dir}"
+abs_builddir="${abs_srcdirs_dir}/${packname}/___build___"
+abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+install -d "${abs_builddir}" || ${bail_out}
+(
+
+    cd "${abs_builddir}" || ${bail_out}
+
+    # Copy the sources.
+    cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
+        || ${bail_out}
+
+    if is_yes "${_advanced_features}"; then
+        extra_arguments=(
+            --enable-type-checking
+            --enable-auto-forcing
+            --enable-sharp-dot
+            --enable-bignum
+            --enable-ratnum
+            --enable-cpxnum
+            --enable-{s8,u16,s16,u32,s32,u64,s64,f32}vector
+            --enable-smp
+        )
+    else
+        extra_arguments=( )
+    fi
+
+    configure_arguments=(
+        --prefix=/usr/local
+        --enable-targets=js,python,ruby,java,php
+        --enable-targets=js,python,ruby
+        --disable-shared
+        --enable-pic
+        --disable-absolute-shared-libs
+        --enable-single-host
+        --enable-gcc-opts
+        --enable-gnu-gcc-no-strict-aliasing
+        --enable-march="${_arch}"
+        --enable-trust-c-tco
+        --enable-dynamic-clib
+        --enable-symlinks
+        --enable-help-browser=falkon
+        --enable-dynamic-tls
+        --enable-thread-system=posix
+        --enable-openssl
+        "${(@)extra_arguments}"
     )
-else
-    extra_arguments=( )
-fi
 
-environment_variables=( EXTRA_USR_LOCAL_CFLAGS="-O1" )
-configure_arguments=(
-    --prefix=/usr/local
-    #--enable-targets=js,python,ruby,java,php
-    --enable-targets=js,python,ruby
-    --disable-shared
-    --enable-pic
-    --disable-absolute-shared-libs
-    --enable-single-host
-    --enable-gcc-opts
-    --enable-gnu-gcc-no-strict-aliasing
-    --enable-march="${_arch}"
-    --enable-trust-c-tco
-    --enable-dynamic-clib
-    --enable-symlinks
-    --enable-help-browser=falkon
-    --enable-dynamic-tls
-    --enable-thread-system=posix
-    --enable-openssl
-    "${(@)extra_arguments}"
-)
-make_arguments=( all )
+    export TARGETED_HOST="${_targeted_host}"
+    export EXTRA_USR_LOCAL_CFLAGS="-O1"
 
-source shared/basic.zsh
+    ./configure "${(@)configure_arguments}" || ${bail_out}
+    make -j"${jobs}" || ${bail_out}
+    make -j"${jobs}" modules || ${bail_out}
+    if is_yes "${_check}"; then
+        make -j"${check_jobs}" check || ${bail_out}
+    fi
+    make -j"${jobs}" install DESTDIR="${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
 
 mkdir -p "${abs_destdir}"/usr/local/share/doc || ${bail_out}
 mv "${abs_destdir}"/usr/local/doc \
