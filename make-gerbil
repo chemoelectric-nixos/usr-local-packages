@@ -1,0 +1,75 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+source shared/git.zsh
+
+if [[ $# -ne 4 ]]; then
+    echo "Usage: $0 REVISION TARGETED_HOST CHECK ARCH"
+    exit 3
+fi
+
+# Make Gerbil Scheme from the Git sources.
+name=gerbil
+
+_revision="${1}"
+_targeted_host="${2}"
+_check="${3}"
+_arch="${4}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+git_check_out "${abs_repo_dir}" "${_revision}"
+
+packname="${name}-${_revision}"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_repo_dir}"
+abs_builddir="${abs_srcdirs_dir}/${packname}/___build___"
+abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
+
+rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+
+# Clone the repository.
+git clone --recursive "${abs_srcdir}" "${abs_builddir}" || ${bail_out}
+
+(
+    cd "${abs_builddir}" || ${bail_out}
+    if [[ "${_revision}" = "«live»" ]]; then
+        echo "Checking out ${name} live." || ${bail_out}
+        git checkout -q
+    else
+        echo "Checking out ${name} revision ${_revision}"
+        git checkout -q "${_revision}" || ${bail_out}
+    fi
+
+    ./configure --prefix=/usr/local --enable-march="${_arch}" \
+        || ${bail_out}
+
+    make -j"${jobs}" || ${bail_out}
+    if is_yes "${_check}"; then
+        make check || ${bail_out}
+    fi
+    make install DESTDIR="${abs_destdir}" || ${bail_out}
+
+    for dir in bin include lib share src; do
+        rm "${abs_destdir}/usr/local/${dir}" || ${bail_out}
+    done
+
+    mkdir -p "${abs_destdir}"/usr/local/bin || ${bail_out}
+    (
+        cd "${abs_destdir}"/usr/local/bin || ${bail_out}
+        ln -f -s --relative \
+           `realpath "${abs_destdir}"/usr/local/current/bin`/* \
+           . || ${bail_out}
+    ) || ${bail_out}
+
+    rm "${abs_destdir}"/usr/local/current || ${bail_out}
+    rm -f "${abs_destdir}"/usr/local/bin/{gambuild-C,gsc}
+    
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
