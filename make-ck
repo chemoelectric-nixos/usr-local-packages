@@ -1,0 +1,28 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+# Concurrency Kit.
+name=ck
+
+ban_enable_silent_rules=yes
+
+# The regression tests might not be supported for out-of-source
+# builds.
+ban_out_of_source_build=yes
+
+environment_variables=( )
+configure_arguments=(
+    --use-cc-builtins
+    --prefix=/usr/local
+    --libdir=/usr/local/lib
+    --includedir=/usr/local/include
+    --mandir=/usr/local/share/man
+)
+make_arguments=( all )
+check_arguments=( regressions )
+
+source shared/basic.zsh
