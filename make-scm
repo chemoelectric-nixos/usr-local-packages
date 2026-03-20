@@ -1,0 +1,80 @@
+#!/bin/zsh
+
+source shared/make_package.zsh
+
+if [[ $# -ne 6 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION SLIB_PACKAGE_VERSION TARGETED_HOST CHECK HOST ARCH"
+    exit 2
+fi
+
+name=scm
+
+_package_version="${package_version:-${1?}}"
+_slib_package_version="${2?}"
+_targeted_host="${3?}"
+_check="${4?}"
+_arch="${5?}"
+_tune="${6?}"
+
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
+
+bail_out=( exit 1 )
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+silent_rules="${silent_rules:-yes}"
+
+packname="${name}-${_package_version}"
+slib_packname="slib-${_slib_package_version}"
+src_tarball="${abs_src_tarball_dir}/${packname}.zip"
+slib_src_tarball="${abs_src_tarball_dir}/${slib_packname}.zip"
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/scm"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+rm -R -f "${abs_srcdir}" || ${bail_out}
+mkdir -p "${abs_srcdir}" || ${bail_out}
+(
+    cd "${abs_srcdir}" || ${bail_out}
+    unzip "${src_tarball}" || ${bail_out}
+    unzip "${slib_src_tarball}" || ${bail_out}
+) || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+(
+    cd "${abs_builddir}" || ${bail_out}
+
+    awk '/\(if \(not \(defined\? slib:in-catalog\?\)\)/ {next} \
+         /\(define slib:in-catalog\? require:feature->path\)\)/ {print "(load \"/usr/local/lib/slib/require.scm\")"; next} \
+         {print}' Init5f4.scm > tmpfile && mv tmpfile Init5f4.scm \
+            || ${bail_out}
+
+    ./configure --prefix=/usr/local \
+                --oldincludedir=/usr/local/include/ || ${bail_out}
+    cflags="-std=gnu89 -Wno-error -O2 -fPIC -march=${_arch} -mtune=${_tune}"
+    make scmlit CFLAGS="${cflags}" || ${bail_out}
+    sh <(./build --compiler-options="${cflags}") || ${bail_out}
+
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    # FIXME: WE NEED TO INSTALL SLIB AND SCM SIMULTANEOUSLY. FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
+    mkdir -p "${abs_destdir}"/usr/local/lib || ${bail_out}
+    cp -R /usr/local/lib/slib "${abs_destdir}/usr/local/lib" || ${bail_out}
+
+    make install \
+        DESTDIR="${abs_destdir}" \
+        INSTALL_INFO="install -m 644" || ${bail_out}
+
+) || ${bail_out}
+
+make_package "${bin_tarball}" "${abs_destdir}" \
+             ban_adjust_runpaths || ${bail_out}
