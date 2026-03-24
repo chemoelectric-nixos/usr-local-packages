@@ -1,0 +1,29 @@
+--- chez-exe.git/Makefile.ORIG	2026-03-24 10:26:27.580203363 +0000
++++ chez-exe.git/Makefile	2026-03-24 10:43:50.282826090 +0000
+@@ -12,7 +12,9 @@
+ psboot = $(bootpath)/petite.boot
+ csboot = $(bootpath)/scheme.boot
+ custom_boot = custom-boot.ss
+-kernel = $(libdir)/kernel.o
++kernel = $(libdir)/libkernel.a
++liblz4 = $(libdir)/liblz4.a
++libz = $(libdir)/libz.a
+ scheme ?= scheme
+ 
+ runscheme = "$(scheme)" -b "$(bootpath)/petite.boot" -b "$(bootpath)/scheme.boot"
+@@ -21,7 +23,14 @@
+ 	$(runscheme) --compile-imported-libraries --program $< --full-chez --chez-lib-dir . $<
+ 
+ %.a: embed_target.o setup.o stubs.o %_boot.o $(kernel)
+-	ar rcs $@ $^
++	ar -r -c $@ $(filter %.o,$^)
++	mkdir -p tmpdir
++	(cd tmpdir && ar -x $(kernel))
++	(cd tmpdir && ar -x $(liblz4))
++	(cd tmpdir && ar -x $(libz))
++	(cd tmpdir && ar -r -c ../$*.a *.o)
++	ranlib $@
++	rm -R tmpdir
+ 
+ stubs.o: stubs.c
+ 	$(CC) -c -o $@ $<
