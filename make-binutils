@@ -30,7 +30,8 @@ configure_arguments=(
     --enable-lto
     --enable-host-shared
     --enable-{gcov,gprof,gprofng}
-    --enable-threads
+    --enable-threads=posix
+    --enable-libgomp
     --disable-werror
     --enable-new-dtags
     --enable-install-libiberty

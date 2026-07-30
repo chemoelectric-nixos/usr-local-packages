@@ -1,0 +1,65 @@
+#!/bin/zsh
+
+source shared/helpers.zsh
+source shared/make_package.zsh
+
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
+    exit 2
+fi
+
+name=capypdf
+
+_package_version="${package_version:-${1?}}"
+_targeted_host="${targeted_host:-${2?}}"
+_check="${check:-${3?}}"
+_arch="${4?}"
+_tune="${5?}"
+
+_build_name="${build_name:-___build___}"
+_dest_name="${dest_name:-___dest___}"
+
+bail_out=( exit 1 )
+if [[ x${check_arguments} = x ]]; then
+    check_arguments=( check )
+fi
+
+abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
+abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
+abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
+
+packname="${name}-${_package_version}"
+src_tarball=`find_src_tarball "${abs_src_tarball_dir}/${packname}"` || ${bail_out}
+bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${_targeted_host}.tar.zst"
+abs_srcdir="${abs_srcdirs_dir}/${packname}"
+abs_builddir="${abs_srcdir}/${_build_name}"
+abs_destdir="${abs_srcdir}/${_dest_name}"
+
+mkdir -p "${abs_srcdirs_dir}"
+rm -R -f "${abs_srcdir}" || ${bail_out}
+tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+mkdir -p "${abs_builddir}" || ${bail_out}
+if [[ `whence -w patch_function` = 'patch_function: function' ]]; then
+    (
+        cd "${abs_srcdir}" || ${bail_out}
+        patch_function || ${bail_out}
+    ) || ${bail_out}
+fi
+(
+    cd "${abs_srcdir}" || ${bail_out}
+
+    meson setup "${abs_builddir}" -Dwerror=false \
+          -Dcpp_args="-pipe -fPIC -O2 -fpermissive -mno-rdseed \
+                            -march=${_arch} -mtune=${_tune}" \
+          || ${bail_out}
+    meson compile -C "${abs_builddir}" || ${bail_out}
+    if is_yes "${_check}"; then
+        meson check -C "${abs_builddir}" || ${bail_out}
+    fi
+    meson install -C "${abs_builddir}" --destdir "${abs_destdir}" || ${bail_out}
+
+) || ${bail_out}
+
+if is_no "${ban_make_package}"; then
+    make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
+fi

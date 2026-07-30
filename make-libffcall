@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK"
+    exit 2
+fi
+
+name=libffcall
+
+environment_variables=( )
+configure_arguments=(
+    --enable-silent-rules
+)
+make_arguments=( -j1 )
+check_arguments=( -j1 )
+install_arguments=( -j1 )
+
+source shared/basic.zsh

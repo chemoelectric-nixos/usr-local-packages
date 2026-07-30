@@ -95,12 +95,15 @@ configure_arguments=(
     --enable-objc-gc
     --disable-werror
     --enable-gcov
-    --enable-threads
+    --enable-threads=posix
+    --enable-libgomp
     --enable-decimal-float
     --enable-new-dtags
     --enable-fixed-point="${fixed_point}"
     --with-{gmp,mpfr,mpc,isl,zstd,target-bdw-gc}=${static_libraries}
     --without-{target-,}system-zlib
+    --with-target-libxml2-include=/usr/local/include/libxml2
+    --with-target-libxml2-lib=/usr/local/lib
 )
 
 source shared/basic.zsh
