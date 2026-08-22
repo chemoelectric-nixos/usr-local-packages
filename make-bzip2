@@ -1,48 +1,85 @@
 #!/bin/zsh
 
 source shared/make_package.zsh
+source shared/git.zsh
 
-if [[ $# -ne 4 ]]; then
-    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST ARCH TUNE"
+if [[ $# -ne 5 ]]; then
+    echo "Usage: $0 PACKAGE_VERSION TARGETED_HOST CHECK ARCH TUNE"
     exit 2
 fi
 
 name=bzip2
 
+version="${1?}"
+targeted_host="${2?}"
+check="${3?}"
+_arch="${4?}"
+_tune="${5?}"
+
 abs_src_tarball_dir=`realpath "${PWD}/src_tarballs"`
 abs_bin_tarball_dir=`realpath "${PWD}/bin_tarballs"`
 abs_srcdirs_dir=`realpath "${PWD}/srcdirs"`
 
-targeted_host="${2}"
-check=no
-version="${1}"
 packname="${name}-${version}"
 bin_tarball="${abs_bin_tarball_dir}/${packname}-binary-for-${targeted_host}.tar.zst"
-abs_srcdir="${abs_srcdirs_dir}/${packname}"
-abs_destdir="${abs_srcdir}/___dest___"
 bail_out=( exit 1 )
 
-src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+if [[ "${version}" != "1.0.8" ]]; then
 
-make_arguments=( CC="gcc -fPIC -march=${3} -mtune=${4}" )
+    abs_repo_dir="${abs_src_tarball_dir}/${name}.git"
+    git_check_out "${abs_repo_dir}" "${version}"
 
-mkdir -p "${abs_srcdirs_dir}"
-rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
-tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
-(
-    cd "${abs_srcdir}" || ${bail_out}
-    make ${(@)make_arguments} || ${bail_out}
-    make install ${(@)make_arguments} PREFIX="${abs_destdir}"/usr/local \
-        || ${bail_out}
-    make -f Makefile-libbz2_so ${(@)make_arguments} || ${bail_out}
-    install -d "${abs_destdir}"/usr/local/share || ${bail_out}
-    mv "${abs_destdir}"/usr/local/{man,share} || ${bail_out}
-    install -d "${abs_destdir}"/usr/local/share/doc/"${name}" \
-        || ${bail_out}
-    install manual.{pdf,html} \
-            "${abs_destdir}"/usr/local/share/doc/"${name}" \
-        || ${bail_out}
+    abs_srcdir="${abs_repo_dir}"
+    builddir="___build___"
+    abs_builddir="${abs_srcdirs_dir}/${packname}/${builddir}"
+    abs_destdir="${abs_srcdirs_dir}/${packname}/___dest___"
 
-) || ${bail_out}
+    rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+    install -d "${abs_builddir}" || ${bail_out}
+    (
+        cd "${abs_builddir}" || ${bail_out}
+
+        cp --archive --link --update=none "${abs_srcdir}"/* "${abs_builddir}" \
+            || ${bail_out}
+
+        meson setup --prefix /usr/local "${builddir}" || ${bail_out}
+        meson compile -C "${builddir}" || ${bail_out}
+        if is_yes "${check}"; then
+            meson test -C "${builddir}" --print-errorlogs
+        fi
+        meson install -C "${builddir}" --destdir "${abs_destdir}" || ${bail_out}
+
+        (cd "${abs_destdir}/usr/local/lib/pkgconfig" && ln -s bz2.pc bzip2.pc)
+    )
+
+else
+
+    src_tarball="${abs_src_tarball_dir}/${packname}.tar.gz"
+
+    abs_srcdir="${abs_srcdirs_dir}/${packname}"
+    abs_destdir="${abs_srcdir}/___dest___"
+
+    make_arguments=( CC="gcc -fPIC -march=${_arch} -mtune=${_tune}" )
+
+    mkdir -p "${abs_srcdirs_dir}"
+    rm -R -f "${abs_srcdirs_dir}/${packname}" || ${bail_out}
+    tar -f "${src_tarball}" -C "${abs_srcdirs_dir}" -x || ${bail_out}
+    (
+        cd "${abs_srcdir}" || ${bail_out}
+        make ${(@)make_arguments} || ${bail_out}
+        make install ${(@)make_arguments} PREFIX="${abs_destdir}"/usr/local \
+            || ${bail_out}
+        make -f Makefile-libbz2_so ${(@)make_arguments} || ${bail_out}
+        install -d "${abs_destdir}"/usr/local/share || ${bail_out}
+        mv "${abs_destdir}"/usr/local/{man,share} || ${bail_out}
+        install -d "${abs_destdir}"/usr/local/share/doc/"${name}" \
+            || ${bail_out}
+        install manual.{pdf,html} \
+                "${abs_destdir}"/usr/local/share/doc/"${name}" \
+            || ${bail_out}
+
+    ) || ${bail_out}
+
+fi
 
 make_package "${bin_tarball}" "${abs_destdir}" || ${bail_out}
